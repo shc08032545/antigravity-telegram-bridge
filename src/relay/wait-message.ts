@@ -3,6 +3,7 @@ import path from 'node:path';
 import { Api } from 'grammy';
 import { isAuthorized, loadConfig } from '../config.js';
 import { escapeHtml } from '../telegram/formatter.js';
+import { buildMainMenu, buildSubMenu, resolveActionPrompt } from './menu.js';
 
 const OFFSET_FILE = path.resolve('.relay-offset');
 const UPLOADS_DIR = path.resolve('.relay-uploads');
@@ -61,30 +62,28 @@ async function main(): Promise<void> {
   const api = new Api(config.telegramBotToken);
   let offset = await readOffset();
 
-  // Make sure webhook is cleared so getUpdates works reliably
   await api.deleteWebhook({ drop_pending_updates: false }).catch(() => undefined);
 
-  // Register concise relay commands menu (best-effort)
   await api
     .setMyCommands([
-      { command: 'status', description: 'เช็กสถานะ Antigravity Relay' },
-      { command: 'ping', description: 'ทดสอบการตอบสนอง' },
-      { command: 'whoami', description: 'ดู Telegram User ID / Chat ID' },
-      { command: 'stop_relay', description: 'หยุดโหมด Telegram Relay' },
-      { command: 'help', description: 'วิธีใช้งาน' },
+      { command: 'menu', description: '🏠 เปิดเมนูหลักเลือกใช้งาน Project' },
+      { command: 'status', description: '🟢 เช็กสถานะ Antigravity Relay' },
+      { command: 'ping', description: '🏓 ทดสอบการตอบสนอง' },
+      { command: 'whoami', description: '🪪 ดู Telegram User ID / Chat ID' },
+      { command: 'stop_relay', description: '🛑 หยุดโหมด Telegram Relay' },
+      { command: 'help', description: '❓ วิธีใช้งาน' },
     ])
     .catch(() => undefined);
 
   const maxBytes = config.maxFileSizeMb * 1024 * 1024;
 
-  // Long-poll until an actionable authorized message arrives
   while (true) {
     let updates;
     try {
       updates = await api.getUpdates({
         offset: offset > 0 ? offset : undefined,
         timeout: 25,
-        allowed_updates: ['message'],
+        allowed_updates: ['message', 'callback_query'],
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -96,6 +95,84 @@ async function main(): Promise<void> {
     for (const update of updates) {
       offset = update.update_id + 1;
       await writeOffset(offset);
+
+      // Handle interactive Inline Keyboard button presses
+      if (update.callback_query) {
+        const cb = update.callback_query;
+        const userId = cb.from.id;
+        const chatId = cb.message?.chat.id ?? userId;
+        const username = cb.from.username ?? '';
+        const data = cb.data ?? '';
+
+        if (!isAuthorized(config, userId, chatId)) {
+          await api
+            .answerCallbackQuery(cb.id, {
+              text: '⛔ คุณไม่มีสิทธิ์ใช้งานเมนูนี้',
+              show_alert: true,
+            })
+            .catch(() => undefined);
+          continue;
+        }
+
+        // Navigate between Main Menu & Project Sub-menus directly (instant, ~0.3s)
+        if (data.startsWith('menu:')) {
+          const section = data.slice('menu:'.length);
+          const screen = buildSubMenu(section);
+          await api.answerCallbackQuery(cb.id).catch(() => undefined);
+
+          if (screen && cb.message && 'message_id' in cb.message) {
+            await api
+              .editMessageText(chatId, cb.message.message_id, screen.text, {
+                parse_mode: 'HTML',
+                reply_markup: screen.reply_markup,
+              })
+              .catch(() =>
+                api.sendMessage(chatId, screen.text, {
+                  parse_mode: 'HTML',
+                  reply_markup: screen.reply_markup,
+                }),
+              );
+          }
+          continue;
+        }
+
+        // Action button pressed -> acknowledge & wake up Antigravity!
+        const actionPrompt = resolveActionPrompt(data);
+        if (actionPrompt) {
+          await api
+            .answerCallbackQuery(cb.id, { text: 'รับคำสั่งแล้ว กำลังดำเนินการ...' })
+            .catch(() => undefined);
+          await api.sendChatAction(chatId, 'typing').catch(() => undefined);
+
+          const ack = await api
+            .sendMessage(
+              chatId,
+              `⏳ <b>รับคำสั่งจากเมนูแล้ว:</b> ${escapeHtml(actionPrompt)}\nกำลังให้ Antigravity ดำเนินการ...`,
+              { parse_mode: 'HTML' },
+            )
+            .catch(() => null);
+
+          console.log(
+            JSON.stringify({
+              type: 'message',
+              source: 'menu_button',
+              callbackData: data,
+              chatId,
+              userId,
+              username,
+              messageId: cb.message?.message_id ?? null,
+              statusMessageId: ack?.message_id ?? null,
+              text: actionPrompt,
+              attachmentPath: null,
+              attachmentError: null,
+            }),
+          );
+          return;
+        }
+
+        await api.answerCallbackQuery(cb.id).catch(() => undefined);
+        continue;
+      }
 
       const msg = update.message;
       if (!msg) continue;
@@ -134,6 +211,17 @@ async function main(): Promise<void> {
         continue;
       }
 
+      if (rawText === '/menu' || rawText === '/start') {
+        const menu = buildMainMenu();
+        await api
+          .sendMessage(chatId, menu.text, {
+            parse_mode: 'HTML',
+            reply_markup: menu.reply_markup,
+          })
+          .catch(() => undefined);
+        continue;
+      }
+
       if (rawText === '/ping') {
         await api
           .sendMessage(chatId, '🏓 Pong! Antigravity Relay พร้อมรับคำสั่งครับ')
@@ -145,14 +233,14 @@ async function main(): Promise<void> {
         await api
           .sendMessage(
             chatId,
-            '🟢 <b>Antigravity Direct Relay</b> ออนไลน์และพร้อมรับคำสั่งอยู่ครับ\nพิมพ์งานที่ต้องการให้ทำหรือแนบรูป/ไฟล์ส่งมาได้เลย',
+            '🟢 <b>Antigravity Direct Relay</b> ออนไลน์และพร้อมรับคำสั่งอยู่ครับ\nพิมพ์ <code>/menu</code> เพื่อเปิดเมนูเลือกโปรเจกต์ หรือพิมพ์งานที่ต้องการให้ทำได้เลย',
             { parse_mode: 'HTML' },
           )
           .catch(() => undefined);
         continue;
       }
 
-      if (rawText === '/start' || rawText === '/help') {
+      if (rawText === '/help') {
         await api
           .sendMessage(
             chatId,
@@ -162,6 +250,7 @@ async function main(): Promise<void> {
               'ส่งข้อความคำสั่ง รูปภาพ หรือไฟล์แนบมาได้เลย ผมจะดำเนินการให้บนแชท Antigravity โดยตรงแล้วส่งคำตอบกลับมาให้ครับ',
               '',
               '<b>คำสั่ง:</b>',
+              '/menu — 🏠 เปิดเมนูหลักเลือกใช้งาน Project',
               '/status — เช็กสถานะการเชื่อมต่อ',
               '/ping — ทดสอบการตอบสนอง',
               '/whoami — ดู User ID / Chat ID',
@@ -188,7 +277,6 @@ async function main(): Promise<void> {
         return;
       }
 
-      // Download photo or document if present
       let attachmentPath: string | null = null;
       let attachmentError: string | null = null;
 
@@ -236,19 +324,19 @@ async function main(): Promise<void> {
         )
         .catch(() => null);
 
-      const payload = {
-        type: 'message',
-        chatId,
-        userId,
-        username,
-        messageId: msg.message_id,
-        statusMessageId: ack?.message_id ?? null,
-        text: rawText,
-        attachmentPath,
-        attachmentError,
-      };
-
-      console.log(JSON.stringify(payload));
+      console.log(
+        JSON.stringify({
+          type: 'message',
+          chatId,
+          userId,
+          username,
+          messageId: msg.message_id,
+          statusMessageId: ack?.message_id ?? null,
+          text: rawText,
+          attachmentPath,
+          attachmentError,
+        }),
+      );
       return;
     }
   }

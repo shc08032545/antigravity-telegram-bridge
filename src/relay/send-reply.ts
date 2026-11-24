@@ -6,6 +6,7 @@ import {
   splitMarkdownForTelegram,
   TELEGRAM_MAX_LENGTH,
 } from '../telegram/formatter.js';
+import { buildMainMenu } from './menu.js';
 
 interface CliArgs {
   chatId: number;
@@ -14,6 +15,7 @@ interface CliArgs {
   file?: string;
   photo?: string;
   document?: string;
+  showMenu: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -23,6 +25,7 @@ function parseArgs(argv: string[]): CliArgs {
   let file: string | undefined;
   let photo: string | undefined;
   let document: string | undefined;
+  let showMenu = false;
 
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
@@ -45,14 +48,18 @@ function parseArgs(argv: string[]): CliArgs {
     } else if (flag === '--document' && next) {
       document = next;
       i += 1;
+    } else if (flag === '--menu') {
+      showMenu = true;
     }
   }
 
   if (!chatId || !Number.isSafeInteger(chatId)) {
-    throw new Error('Usage: relay:reply --chat <chatId> [--edit <msgId>] [--text <md> | --file <path> | stdin]');
+    throw new Error(
+      'Usage: relay:reply --chat <chatId> [--edit <msgId>] [--menu] [--text <md> | --file <path> | stdin]',
+    );
   }
 
-  return { chatId, editMessageId, text, file, photo, document };
+  return { chatId, editMessageId, text, file, photo, document, showMenu };
 }
 
 async function readStdin(): Promise<string> {
@@ -70,6 +77,26 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const args = parseArgs(process.argv.slice(2));
   const api = new Api(config.telegramBotToken);
+
+  if (args.showMenu) {
+    const menu = buildMainMenu();
+    if (args.editMessageId) {
+      try {
+        await api.editMessageText(args.chatId, args.editMessageId, menu.text, {
+          parse_mode: 'HTML',
+          reply_markup: menu.reply_markup,
+        });
+        return;
+      } catch {
+        // Fall through to sending a fresh menu message
+      }
+    }
+    await api.sendMessage(args.chatId, menu.text, {
+      parse_mode: 'HTML',
+      reply_markup: menu.reply_markup,
+    });
+    return;
+  }
 
   let markdown = args.text ?? '';
   if (args.file) {
@@ -101,7 +128,7 @@ async function main(): Promise<void> {
             );
             continue;
           } catch {
-            // Fall through to sendMessage if original status message was deleted/unchanged
+            // Fall through to sendMessage
           }
         }
       }
