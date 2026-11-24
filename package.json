@@ -9,6 +9,8 @@
     "start": "tsx src/index.ts",
     "build": "tsc",
     "start:prod": "node dist/index.js",
+    "relay:wait": "node dist/relay/wait-message.js",
+    "relay:reply": "node dist/relay/send-reply.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

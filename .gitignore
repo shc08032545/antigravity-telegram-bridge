@@ -7,3 +7,5 @@ selectors.json
 .DS_Store
 tmp/
 uploads/
+.relay-offset
+.relay-uploads/
