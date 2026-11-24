@@ -72,46 +72,57 @@ export async function runTradingAgentsAnalysis(params: {
     {
       cwd: TRADING_AGENTS_DIR,
       timeoutMs: 8 * 60 * 1000, // up to 8 min for multi-agent analysis
+      env: {
+        ...process.env,
+        TRADINGAGENTS_DEEP_THINK_LLM: 'gemini-3.5-flash',
+        TRADINGAGENTS_QUICK_THINK_LLM: 'gemini-3.5-flash-lite',
+        TRADINGAGENTS_OUTPUT_LANGUAGE: 'Thai',
+      },
     },
   );
 
-  // Locate saved report directory & files
-  const reportsDir = path.join(TRADING_AGENTS_DIR, 'results', ticker, date, 'reports');
-  let htmlReportPath: string | null = null;
-  const candidateHtml = path.join(reportsDir, 'complete_report.html');
+  // Locate newest saved report directory in v0.7.1 layout: results/reports/<TICKER>_YYYYMMDD_HHMMSS
+  const reportsRoot = path.join(TRADING_AGENTS_DIR, 'results', 'reports');
+  let latestReportDir: string | null = null;
   try {
-    await fs.access(candidateHtml);
-    htmlReportPath = candidateHtml;
+    const entries = await fs.readdir(reportsRoot, { withFileTypes: true });
+    const matching = entries
+      .filter((e) => e.isDirectory() && e.name.startsWith(`${ticker}_`))
+      .map((e) => e.name)
+      .sort()
+      .reverse();
+    if (matching[0]) {
+      latestReportDir = path.join(reportsRoot, matching[0]);
+    }
   } catch {
-    // Also check one level up in case layout differs
-    const altHtml = path.join(
-      TRADING_AGENTS_DIR,
-      'results',
-      ticker,
-      date,
-      'complete_report.html',
-    );
+    latestReportDir = null;
+  }
+
+  let htmlReportPath: string | null = null;
+  let reportExcerpt = '';
+
+  if (latestReportDir) {
+    const htmlCandidate = path.join(latestReportDir, 'complete_report.html');
     try {
-      await fs.access(altHtml);
-      htmlReportPath = altHtml;
+      await fs.access(htmlCandidate);
+      htmlReportPath = htmlCandidate;
     } catch {
       htmlReportPath = null;
     }
-  }
 
-  let reportExcerpt = '';
-  for (const mdName of [
-    'final_trade_decision.md',
-    'trader_investment_plan.md',
-    'investment_plan.md',
-  ]) {
     try {
-      const content = await fs.readFile(path.join(reportsDir, mdName), 'utf-8');
-      if (content.trim()) {
-        reportExcerpt += `\n\n### ${mdName}\n${content.slice(0, 3500)}`;
+      const md = await fs.readFile(
+        path.join(latestReportDir, 'complete_report.md'),
+        'utf-8',
+      );
+      // Extract header + tail (Research Manager, Trader, Portfolio Manager decision)
+      if (md.length > 7000) {
+        reportExcerpt = `${md.slice(0, 2200)}\n\n...\n\n${md.slice(-4800)}`;
+      } else {
+        reportExcerpt = md;
       }
     } catch {
-      // Optional report file
+      reportExcerpt = '';
     }
   }
 

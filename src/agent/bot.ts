@@ -20,6 +20,11 @@ import {
   createAgentToolExecutor,
   runTradingAgentsAnalysis,
 } from './tools.js';
+import {
+  buildMainMenu,
+  buildSubMenu,
+  resolveActionPrompt,
+} from '../relay/menu.js';
 
 const AVAILABLE_MODELS = [
   'gemini-3.8-flash',
@@ -134,6 +139,7 @@ export function createAlwaysOnlineAgentBot(
     '• 🖼 ส่งรูปภาพหรือเอกสารให้ช่วยวิเคราะห์ได้',
     '',
     '<b>คำสั่งที่ใช้ได้:</b>',
+    '/menu — 🏠 เปิดเมนูหลักเลือกใช้งาน Project',
     '/analyze &lt;TICKER&gt; — รัน TradingAgents วิเคราะห์หุ้น (เช่น <code>/analyze NVDA</code>, <code>/analyze PTT.BK</code>)',
     '/model [ชื่อโมเดล] — ดูหรือสลับโมเดล Gemini',
     '/new — ล้างประวัติแชทเพื่อเริ่มเรื่องใหม่',
@@ -142,12 +148,51 @@ export function createAlwaysOnlineAgentBot(
     '/whoami — ดู User ID / Chat ID',
   ].join('\n');
 
-  bot.command('start', async (ctx) => {
-    await ctx.reply(helpHtml, { parse_mode: 'HTML' });
+  bot.command(['start', 'menu'], async (ctx) => {
+    const menu = buildMainMenu();
+    await ctx.reply(menu.text, {
+      parse_mode: 'HTML',
+      reply_markup: menu.reply_markup,
+    });
   });
 
   bot.command('help', async (ctx) => {
     await ctx.reply(helpHtml, { parse_mode: 'HTML' });
+  });
+
+  bot.on('callback_query:data', async (ctx) => {
+    const data = ctx.callbackQuery.data;
+
+    if (data.startsWith('menu:')) {
+      const section = data.slice('menu:'.length);
+      const screen = buildSubMenu(section);
+      await ctx.answerCallbackQuery().catch(() => undefined);
+      if (screen) {
+        await ctx
+          .editMessageText(screen.text, {
+            parse_mode: 'HTML',
+            reply_markup: screen.reply_markup,
+          })
+          .catch(() =>
+            ctx.reply(screen.text, {
+              parse_mode: 'HTML',
+              reply_markup: screen.reply_markup,
+            }),
+          );
+      }
+      return;
+    }
+
+    const actionPrompt = resolveActionPrompt(data);
+    if (actionPrompt) {
+      await ctx
+        .answerCallbackQuery({ text: 'รับคำสั่งแล้ว กำลังดำเนินการ...' })
+        .catch(() => undefined);
+      await handleUserParts(ctx, [{ text: actionPrompt }]);
+      return;
+    }
+
+    await ctx.answerCallbackQuery().catch(() => undefined);
   });
 
   bot.command('ping', async (ctx) => {

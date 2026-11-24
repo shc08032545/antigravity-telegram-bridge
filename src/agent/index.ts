@@ -52,13 +52,14 @@ async function main(): Promise<void> {
 
   await bot.api
     .setMyCommands([
-      { command: 'analyze', description: 'วิเคราะห์หุ้นด้วย TradingAgents (/analyze NVDA)' },
-      { command: 'model', description: 'ดูหรือสลับโมเดล Gemini' },
-      { command: 'new', description: 'เริ่มบทสนทนาใหม่' },
-      { command: 'status', description: 'เช็กสถานะบอตและ uptime' },
-      { command: 'ping', description: 'ทดสอบความเร็วตอบสนอง' },
-      { command: 'whoami', description: 'ดู Telegram User ID / Chat ID' },
-      { command: 'help', description: 'คู่มือการใช้งาน' },
+      { command: 'menu', description: '🏠 เปิดเมนูหลักเลือกใช้งาน Project' },
+      { command: 'analyze', description: '📊 วิเคราะห์หุ้นด้วย TradingAgents (/analyze NVDA)' },
+      { command: 'model', description: '🧠 ดูหรือสลับโมเดล Gemini' },
+      { command: 'new', description: '✨ เริ่มบทสนทนาใหม่' },
+      { command: 'status', description: '🟢 เช็กสถานะบอตและ uptime' },
+      { command: 'ping', description: '🏓 ทดสอบความเร็วตอบสนอง' },
+      { command: 'whoami', description: '🪪 ดู Telegram User ID / Chat ID' },
+      { command: 'help', description: '❓ คู่มือการใช้งาน' },
     ])
     .catch((err) => logger.warn('Failed to update bot command list', err));
 
@@ -69,6 +70,7 @@ async function main(): Promise<void> {
 
   logger.info(`Starting always-online Telegram Agent with model ${model}...`);
   await bot.start({
+    allowed_updates: ['message', 'callback_query'],
     onStart: (botInfo) => {
       logger.info(
         `Always-online agent @${botInfo.username} is ONLINE and waiting for messages!`,
