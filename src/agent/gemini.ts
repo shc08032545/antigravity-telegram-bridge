@@ -86,28 +86,71 @@ export class GeminiClient {
   private readonly apiKey: string;
   private readonly baseUrl =
     'https://generativelanguage.googleapis.com/v1beta/models';
+  private readonly fallbackModels = [
+    'gemini-3.8-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
+  ];
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
   }
 
-  private async callApi(
+  private async callSingleModel(
     model: string,
     body: Record<string, unknown>,
-  ): Promise<GenerateContentResponse> {
+  ): Promise<{ ok: boolean; status: number; json: GenerateContentResponse }> {
     const url = `${this.baseUrl}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-
     const json = (await res.json()) as GenerateContentResponse;
-    if (!res.ok || json.error) {
-      const msg = json.error?.message ?? `HTTP ${res.status}`;
-      throw new Error(`Gemini API (${model}) error: ${msg}`);
+    return { ok: res.ok && !json.error, status: res.status, json };
+  }
+
+  private async callApi(
+    model: string,
+    body: Record<string, unknown>,
+  ): Promise<GenerateContentResponse> {
+    const candidates = [
+      model,
+      ...this.fallbackModels.filter((m) => m !== model),
+    ];
+
+    let lastError = 'Unknown Gemini API error';
+    for (const candidateModel of candidates) {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const { ok, status, json } = await this.callSingleModel(
+          candidateModel,
+          body,
+        );
+        if (ok) {
+          return json;
+        }
+
+        const msg = json.error?.message ?? `HTTP ${status}`;
+        lastError = `Gemini API (${candidateModel}) error: ${msg}`;
+        const isTransient =
+          status === 429 ||
+          status === 500 ||
+          status === 502 ||
+          status === 503 ||
+          status === 504 ||
+          /high demand|overloaded|unavailable|rate limit/i.test(msg);
+
+        if (!isTransient) {
+          throw new Error(lastError);
+        }
+
+        if (attempt === 0) {
+          await new Promise((r) => setTimeout(r, 800));
+        }
+      }
     }
-    return json;
+
+    throw new Error(lastError);
   }
 
   /**
