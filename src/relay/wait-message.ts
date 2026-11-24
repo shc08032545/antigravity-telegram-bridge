@@ -1,5 +1,7 @@
+import { execFile } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { Api } from 'grammy';
 import { isAuthorized, loadConfig } from '../config.js';
 import { escapeHtml } from '../telegram/formatter.js';
@@ -10,6 +12,7 @@ import {
   resolveActionPrompt,
 } from './menu.js';
 
+const execFileAsync = promisify(execFile);
 const OFFSET_FILE = path.resolve('.relay-offset');
 const UPLOADS_DIR = path.resolve('.relay-uploads');
 
@@ -45,21 +48,44 @@ async function downloadTelegramFile(
   }
 
   const url = `https://api.telegram.org/file/bot${botToken}/${file.file_path}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Download failed with HTTP ${res.status}`);
-  }
-  const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.byteLength > maxBytes) {
-    throw new Error(`File exceeds limit (${maxBytes} bytes)`);
-  }
-
   const target = path.join(
     UPLOADS_DIR,
     `${Date.now()}_${sanitizeFileName(originalName)}`,
   );
-  await fs.writeFile(target, buf);
-  return target;
+
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+      if (!res.ok) {
+        throw new Error(`Download failed with HTTP ${res.status}`);
+      }
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.byteLength > maxBytes) {
+        throw new Error(`File exceeds limit (${maxBytes} bytes)`);
+      }
+      await fs.writeFile(target, buf);
+      return target;
+    } catch (err) {
+      lastErr = err;
+      await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
+    }
+  }
+
+  // Fallback to curl -4 (forces IPv4 and handles transient Node undici issues)
+  try {
+    await execFileAsync('curl', ['-4', '-fsSL', '--max-time', '25', '-o', target, url]);
+    const stat = await fs.stat(target);
+    if (stat.size > maxBytes) {
+      await fs.unlink(target).catch(() => undefined);
+      throw new Error(`File exceeds limit (${maxBytes} bytes)`);
+    }
+    return target;
+  } catch (curlErr) {
+    const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
+    const curlMsg = curlErr instanceof Error ? curlErr.message : String(curlErr);
+    throw new Error(`${msg} (curl fallback failed: ${curlMsg})`);
+  }
 }
 
 async function main(): Promise<void> {
