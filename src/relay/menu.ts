@@ -5,24 +5,41 @@ export interface MenuScreen {
   reply_markup: InlineKeyboard;
 }
 
+/**
+ * Shared Telegram bottom-left Menu (/) commands used consistently
+ * across both Direct Relay and Always-Online Standby Daemon modes.
+ */
+export const BOT_COMMANDS = [
+  { command: 'menu', description: '🏠 เมนูหลักเลือกใช้งาน Project' },
+  { command: 'analyze', description: '📊 วิเคราะห์หุ้น (เช่น /analyze NVDA)' },
+  { command: 'news', description: '📰 ข่าวหุ้นอเมริกา & ข่าวไทยวันนี้' },
+  { command: 'drive', description: '☁️ เช็กสถานะและไฟล์ Google Drive' },
+  { command: 'shortfilm', description: '🎬 โปรดิวเซอร์หนังสั้น AI 15 ฉาก' },
+  { command: 'projects', description: '📁 จัดการโปรเจกต์ใน Workspace' },
+  { command: 'status', description: '🟢 เช็กสถานะระบบและโหมดปัจจุบัน' },
+  { command: 'new', description: '✨ ล้างความจำเริ่มคุยใหม่' },
+  { command: 'stop_relay', description: '🔄 สลับเข้าโหมด Standby อัตโนมัติ' },
+];
+
 export function buildMainMenu(): MenuScreen {
   const kb = new InlineKeyboard()
-    .text('📊 TradingAgents (วิเคราะห์หุ้น)', 'menu:trading')
+    .text('📊 วิเคราะห์หุ้น (TradingAgents)', 'menu:trading')
     .row()
-    .text('🎬 Thai Shortfilm Studio', 'menu:shortfilm')
-    .row()
-    .text('🤖 Telegram Bridge', 'menu:bridge')
-    .text('🧪 Test Repo', 'menu:test')
-    .row()
+    .text('📰 ข่าว & ตลาดวันนี้', 'menu:news')
     .text('☁️ Google Drive', 'menu:gdrive')
-    .text('📰 ข่าว & ตลาดวันนี้', 'menu:news');
+    .row()
+    .text('🎬 หนังสั้น AI Studio', 'menu:shortfilm')
+    .text('🐙 GitHub & Repos', 'menu:github')
+    .row()
+    .text('📁 โปรเจกต์ใน Workspace', 'menu:projects')
+    .text('⚙️ สถานะ & โหมด', 'menu:system');
 
   return {
     text: [
-      '🏠 <b>Antigravity — เมนูหลักเลือกใช้งาน Project</b>',
+      '🏠 <b>Antigravity — เมนูหลัก</b>',
       '',
-      'เลือกโปรเจกต์หรือเครื่องมือที่ต้องการใช้งานจากปุ่มด้านล่างได้เลยครับ:',
-      '<i>(หรือพิมพ์คำสั่ง / ส่งรูป / ส่งไฟล์มาโดยตรงได้ตลอดเวลา)</i>',
+      'เลือกโปรเจกต์หรือเครื่องมือที่ต้องการใช้งานได้เลยครับ:',
+      '<i>(หรือพิมพ์คำสั่ง / ส่งรูป / ส่งไฟล์มาได้ตลอดเวลา)</i>',
     ].join('\n'),
     reply_markup: kb,
   };
@@ -35,96 +52,24 @@ export function buildSubMenu(section: string): MenuScreen | null {
 
   if (section === 'trading') {
     const kb = new InlineKeyboard()
-      .text('🚀 วิเคราะห์ NVDA', 'act:trading:NVDA')
-      .text('🍎 วิเคราะห์ AAPL', 'act:trading:AAPL')
+      .text('🚀 NVDA', 'act:trading:NVDA')
+      .text('🍎 AAPL', 'act:trading:AAPL')
+      .text('⚡ TSLA', 'act:trading:TSLA')
       .row()
-      .text('⚡ วิเคราะห์ TSLA', 'act:trading:TSLA')
-      .text('🇹🇭 วิเคราะห์ PTT.BK', 'act:trading:PTT.BK')
+      .text('🪟 MSFT', 'act:trading:MSFT')
+      .text('🇹🇭 PTT.BK', 'act:trading:PTT.BK')
+      .text('₿ BTC-USD', 'act:trading:BTC-USD')
       .row()
-      .text('₿ วิเคราะห์ BTC-USD', 'act:trading:BTC-USD')
-      .text('📂 ดูรายงานล่าสุด', 'act:trading:list')
-      .row()
-      .text('⬅️ กลับเมนูหลัก', 'menu:main');
-
-    return {
-      text: [
-        '📊 <b>Project: TradingAgents (Multi-Agent วิเคราะห์หุ้น)</b>',
-        'เส้นทาง: <code>/home/antigravity/TradingAgents</code>',
-        '',
-        'เลือกหุ้นเพื่อเริ่มวิเคราะห์ทันที (ได้สรุปภาษาไทย + ไฟล์รายงาน HTML) หรือพิมพ์ชื่อหุ้นอื่นๆ ส่งมาได้เลยครับ:',
-      ].join('\n'),
-      reply_markup: kb,
-    };
-  }
-
-  if (section === 'shortfilm') {
-    const kb = new InlineKeyboard()
-      .text('💡 ไอเดียเรื่องใหม่ (หนังสั้น 15 ฉาก)', 'act:shortfilm:new_idea')
-      .row()
-      .text('📁 เช็กไฟล์ในโปรเจกต์', 'act:shortfilm:status')
+      .text('📂 ดูรายงานที่เคยรันไว้', 'act:trading:list')
       .row()
       .text('⬅️ กลับเมนูหลัก', 'menu:main');
 
     return {
       text: [
-        '🎬 <b>Project: Thai Shortfilm Studio</b>',
-        'เส้นทาง: <code>/home/antigravity/shc08032545/thai-shortfilm-studio</code>',
+        '📊 <b>TradingAgents — วิเคราะห์หุ้น Multi-Agent</b>',
         '',
-        'โปรดิวเซอร์หนังสั้น AI ภาษาไทย 15 ฉาก (9:16, 24fps, TikTok/Reels/Shorts)',
-      ].join('\n'),
-      reply_markup: kb,
-    };
-  }
-
-  if (section === 'bridge') {
-    const kb = new InlineKeyboard()
-      .text('🧪 รัน Test & เช็ก Git Status', 'act:bridge:status')
-      .row()
-      .text('📁 ดูโครงสร้างโปรเจกต์', 'act:bridge:tree')
-      .row()
-      .text('⬅️ กลับเมนูหลัก', 'menu:main');
-
-    return {
-      text: [
-        '🤖 <b>Project: Antigravity Telegram Bridge</b>',
-        'เส้นทาง: <code>/home/antigravity/shc08032545/antigravity-telegram-bridge</code>',
-        '',
-        'รองรับทั้ง Chrome CDP Bridge, Direct Relay และ Always-Online Daemon',
-      ].join('\n'),
-      reply_markup: kb,
-    };
-  }
-
-  if (section === 'test') {
-    const kb = new InlineKeyboard()
-      .text('📁 ดูไฟล์ & สถานะ Git ใน test', 'act:test:status')
-      .row()
-      .text('⬅️ กลับเมนูหลัก', 'menu:main');
-
-    return {
-      text: [
-        '🧪 <b>Project: shc08032545/test</b>',
-        'เส้นทาง: <code>/home/antigravity/shc08032545/test</code>',
-        '',
-        'เลือกคำสั่งหรือพิมพ์งานที่ต้องการให้สร้างใน repo <code>test</code> ได้เลยครับ',
-      ].join('\n'),
-      reply_markup: kb,
-    };
-  }
-
-  if (section === 'gdrive') {
-    const kb = new InlineKeyboard()
-      .text('📊 สถานะ & พื้นที่ Google Drive', 'act:gdrive:status')
-      .row()
-      .text('🕒 ดูไฟล์ล่าสุด 10 รายการ', 'act:gdrive:recent')
-      .row()
-      .text('⬅️ กลับเมนูหลัก', 'menu:main');
-
-    return {
-      text: [
-        '☁️ <b>Google Drive (Connected)</b>',
-        '',
-        'เลือกดูสถานะ ไฟล์ล่าสุด หรือพิมพ์บอกชื่อไฟล์ที่ต้องการค้นหาได้เลยครับ:',
+        'แตะหุ้นที่ต้องการวิเคราะห์ (ได้สรุปไทย + ไฟล์ <code>complete_report.html</code>)',
+        'หรือพิมพ์ <code>/analyze ชื่อหุ้น</code> เช่น <code>/analyze META</code>',
       ].join('\n'),
       reply_markup: kb,
     };
@@ -132,10 +77,11 @@ export function buildSubMenu(section: string): MenuScreen | null {
 
   if (section === 'news') {
     const kb = new InlineKeyboard()
-      .text('🇺🇸 ข่าวหุ้นอเมริกาวันนี้', 'act:news:us')
+      .text('🇺🇸 หุ้นอเมริกาวันนี้', 'act:news:us')
       .text('🇹🇭 ข่าวไทยวันนี้', 'act:news:th')
       .row()
       .text('🚀 ข่าว NVDA ล่าสุด', 'act:news:nvda')
+      .text('🥇 ราคาทองคำวันนี้', 'act:news:gold')
       .row()
       .text('⬅️ กลับเมนูหลัก', 'menu:main');
 
@@ -143,7 +89,107 @@ export function buildSubMenu(section: string): MenuScreen | null {
       text: [
         '📰 <b>ข่าว & ตลาดวันนี้ (Real-time Search)</b>',
         '',
-        'เลือกหัวข้อข่าวที่ต้องการอัปเดตล่าสุดได้เลยครับ:',
+        'เลือกหัวข้อข่าวที่ต้องการสรุปล่าสุดได้เลยครับ:',
+      ].join('\n'),
+      reply_markup: kb,
+    };
+  }
+
+  if (section === 'gdrive') {
+    const kb = new InlineKeyboard()
+      .text('📊 สถานะ & พื้นที่ Drive', 'act:gdrive:status')
+      .row()
+      .text('🕒 ไฟล์อัปเดตล่าสุด 10 รายการ', 'act:gdrive:recent')
+      .row()
+      .text('⬅️ กลับเมนูหลัก', 'menu:main');
+
+    return {
+      text: [
+        '☁️ <b>Google Drive</b>',
+        '',
+        'เลือกดูสถานะ ไฟล์ล่าสุด หรือพิมพ์ชื่อไฟล์ที่ต้องการค้นหาได้เลยครับ:',
+      ].join('\n'),
+      reply_markup: kb,
+    };
+  }
+
+  if (section === 'shortfilm') {
+    const kb = new InlineKeyboard()
+      .text('💡 ไอเดียเรื่องใหม่ (15 ฉาก)', 'act:shortfilm:new_idea')
+      .row()
+      .text('📁 เช็กไฟล์ในโปรเจกต์', 'act:shortfilm:status')
+      .row()
+      .text('⬅️ กลับเมนูหลัก', 'menu:main');
+
+    return {
+      text: [
+        '🎬 <b>Thai Shortfilm Studio</b>',
+        '<code>/home/antigravity/shc08032545/thai-shortfilm-studio</code>',
+        '',
+        'โปรดิวเซอร์หนังสั้น AI ภาษาไทย 15 ฉาก × 10 วิ (9:16, TikTok/Reels/Shorts)',
+      ].join('\n'),
+      reply_markup: kb,
+    };
+  }
+
+  if (section === 'github') {
+    const kb = new InlineKeyboard()
+      .text('📦 Repo ของฉันทั้งหมด', 'act:github:my_repos')
+      .row()
+      .text('🔎 ค้นหา Repo วิเคราะห์หุ้น', 'act:github:stock_repos')
+      .row()
+      .text('🤖 Bridge Tests & Git', 'act:bridge:status')
+      .text('🧪 Test Repo Status', 'act:test:status')
+      .row()
+      .text('⬅️ กลับเมนูหลัก', 'menu:main');
+
+    return {
+      text: [
+        '🐙 <b>GitHub & Repositories</b>',
+        '',
+        'จัดการและค้นหาโปรเจกต์บน GitHub ผ่าน <code>gh</code> CLI:',
+      ].join('\n'),
+      reply_markup: kb,
+    };
+  }
+
+  if (section === 'projects') {
+    const kb = new InlineKeyboard()
+      .text('📊 TradingAgents', 'menu:trading')
+      .text('🎬 Shortfilm Studio', 'menu:shortfilm')
+      .row()
+      .text('🤖 Telegram Bridge', 'act:bridge:tree')
+      .text('🧪 Test Repo', 'act:test:status')
+      .row()
+      .text('⬅️ กลับเมนูหลัก', 'menu:main');
+
+    return {
+      text: [
+        '📁 <b>โปรเจกต์ใน Workspace (/home/antigravity)</b>',
+        '• <code>TradingAgents</code> — วิเคราะห์หุ้น Multi-Agent',
+        '• <code>thai-shortfilm-studio</code> — โปรดิวเซอร์หนังสั้น AI',
+        '• <code>antigravity-telegram-bridge</code> — สะพาน Telegram Bot',
+        '• <code>test</code> — โปรเจกต์ทดสอบ',
+      ].join('\n'),
+      reply_markup: kb,
+    };
+  }
+
+  if (section === 'system') {
+    const kb = new InlineKeyboard()
+      .text('🟢 เช็กสถานะระบบ', 'sys:status')
+      .text('🏓 ทดสอบ Ping', 'sys:ping')
+      .row()
+      .text('🔄 สลับเข้าโหมด Standby Daemon', 'sys:standby')
+      .row()
+      .text('⬅️ กลับเมนูหลัก', 'menu:main');
+
+    return {
+      text: [
+        '⚙️ <b>สถานะระบบ & โหมดการทำงาน (Hybrid)</b>',
+        '',
+        '• <b>Direct Relay:</b> ใช้สมอง Antigravity ในแชทนี้โดยตรง',
+        '• <b>Standby Daemon:</b> ออนไลน์ 24/7 ด้วย Gemini API + เครื่องมือครบชุด',
       ].join('\n'),
       reply_markup: kb,
     };
@@ -171,11 +217,14 @@ export function resolveActionPrompt(callbackData: string): string | null {
       'สรุปโครงสร้างไฟล์ของโปรเจกต์ /home/antigravity/shc08032545/antigravity-telegram-bridge',
     'act:test:status':
       'ตรวจสอบไฟล์และสถานะ git ในโปรเจกต์ /home/antigravity/shc08032545/test',
+    'act:github:my_repos': 'แสดงรายการ GitHub repositories ทั้งหมดของฉันพร้อมลิงก์และอัปเดตล่าสุด',
+    'act:github:stock_repos': 'ค้นหา repo ใน GitHub การวิเคราะห์หุ้น',
     'act:gdrive:status': 'สถานะ Google drive',
     'act:gdrive:recent': 'แสดงไฟล์ที่อัปเดตล่าสุด 10 รายการใน Google Drive',
     'act:news:us': 'ข่าวหุ้นอเมริกาวันนี้',
     'act:news:th': 'ข่าวไทยวันนี้',
     'act:news:nvda': 'ข่าว nvda ล่าสุด',
+    'act:news:gold': 'ราคาทองคำไทยและทองคำโลกวันนี้ล่าสุด',
   };
 
   return map[callbackData] ?? null;

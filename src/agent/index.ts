@@ -3,6 +3,7 @@ import path from 'node:path';
 import dotenv from 'dotenv';
 import { loadConfig } from '../config.js';
 import { Logger } from '../utils/logger.js';
+import { BOT_COMMANDS } from '../relay/menu.js';
 import { createAlwaysOnlineAgentBot } from './bot.js';
 
 function resolveGoogleApiKey(): string {
@@ -51,17 +52,11 @@ async function main(): Promise<void> {
   process.once('SIGTERM', () => shutdown('SIGTERM'));
 
   await bot.api
-    .setMyCommands([
-      { command: 'menu', description: '🏠 เปิดเมนูหลักเลือกใช้งาน Project' },
-      { command: 'analyze', description: '📊 วิเคราะห์หุ้นด้วย TradingAgents (/analyze NVDA)' },
-      { command: 'model', description: '🧠 ดูหรือสลับโมเดล Gemini' },
-      { command: 'new', description: '✨ เริ่มบทสนทนาใหม่' },
-      { command: 'status', description: '🟢 เช็กสถานะบอตและ uptime' },
-      { command: 'ping', description: '🏓 ทดสอบความเร็วตอบสนอง' },
-      { command: 'whoami', description: '🪪 ดู Telegram User ID / Chat ID' },
-      { command: 'help', description: '❓ คู่มือการใช้งาน' },
-    ])
+    .setMyCommands(BOT_COMMANDS)
     .catch((err) => logger.warn('Failed to update bot command list', err));
+  await bot.api
+    .setChatMenuButton({ menu_button: { type: 'commands' } })
+    .catch(() => undefined);
 
   // Clear webhook & start resilient long-polling loop
   await bot.api

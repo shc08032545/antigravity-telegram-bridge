@@ -3,7 +3,12 @@ import path from 'node:path';
 import { Api } from 'grammy';
 import { isAuthorized, loadConfig } from '../config.js';
 import { escapeHtml } from '../telegram/formatter.js';
-import { buildMainMenu, buildSubMenu, resolveActionPrompt } from './menu.js';
+import {
+  BOT_COMMANDS,
+  buildMainMenu,
+  buildSubMenu,
+  resolveActionPrompt,
+} from './menu.js';
 
 const OFFSET_FILE = path.resolve('.relay-offset');
 const UPLOADS_DIR = path.resolve('.relay-uploads');
@@ -63,16 +68,9 @@ async function main(): Promise<void> {
   let offset = await readOffset();
 
   await api.deleteWebhook({ drop_pending_updates: false }).catch(() => undefined);
-
+  await api.setMyCommands(BOT_COMMANDS).catch(() => undefined);
   await api
-    .setMyCommands([
-      { command: 'menu', description: '🏠 เปิดเมนูหลักเลือกใช้งาน Project' },
-      { command: 'status', description: '🟢 เช็กสถานะ Antigravity Relay' },
-      { command: 'ping', description: '🏓 ทดสอบการตอบสนอง' },
-      { command: 'whoami', description: '🪪 ดู Telegram User ID / Chat ID' },
-      { command: 'stop_relay', description: '🛑 หยุดโหมด Telegram Relay' },
-      { command: 'help', description: '❓ วิธีใช้งาน' },
-    ])
+    .setChatMenuButton({ menu_button: { type: 'commands' } })
     .catch(() => undefined);
 
   const maxBytes = config.maxFileSizeMb * 1024 * 1024;
@@ -114,7 +112,6 @@ async function main(): Promise<void> {
           continue;
         }
 
-        // Navigate between Main Menu & Project Sub-menus directly (instant, ~0.3s)
         if (data.startsWith('menu:')) {
           const section = data.slice('menu:'.length);
           const screen = buildSubMenu(section);
@@ -136,7 +133,41 @@ async function main(): Promise<void> {
           continue;
         }
 
-        // Action button pressed -> acknowledge & wake up Antigravity!
+        if (data === 'sys:status') {
+          await api.answerCallbackQuery(cb.id).catch(() => undefined);
+          await api
+            .sendMessage(
+              chatId,
+              '🟢 <b>สถานะระบบ: Antigravity Direct Relay (Hybrid Mode)</b>\n• สมอง AI: Antigravity ในแชทนี้โดยตรง\n• Auto-Fallback: สลับเป็น Always-Online Daemon อัตโนมัติหากว่างเกิน 20 นาที',
+              { parse_mode: 'HTML' },
+            )
+            .catch(() => undefined);
+          continue;
+        }
+
+        if (data === 'sys:ping') {
+          await api.answerCallbackQuery(cb.id, { text: '🏓 Pong!' }).catch(() => undefined);
+          await api
+            .sendMessage(chatId, '🏓 Pong! Antigravity Direct Relay พร้อมรับคำสั่งครับ')
+            .catch(() => undefined);
+          continue;
+        }
+
+        if (data === 'sys:standby') {
+          await api
+            .answerCallbackQuery(cb.id, { text: 'กำลังสลับเป็น Always-Online Standby...' })
+            .catch(() => undefined);
+          console.log(
+            JSON.stringify({
+              type: 'switch_standby',
+              chatId,
+              userId,
+              username,
+            }),
+          );
+          return;
+        }
+
         const actionPrompt = resolveActionPrompt(data);
         if (actionPrompt) {
           await api
@@ -211,7 +242,106 @@ async function main(): Promise<void> {
         continue;
       }
 
-      if (rawText === '/menu' || rawText === '/start') {
+      // Instant sub-menu shortcuts from the Telegram Menu (/) button
+      const menuShortcutMap: Record<string, string> = {
+        '/menu': 'main',
+        '/start': 'main',
+        '/news': 'news',
+        '/shortfilm': 'shortfilm',
+        '/projects': 'projects',
+      };
+
+      const shortcutSection = menuShortcutMap[rawText];
+      if (shortcutSection) {
+        const screen = buildSubMenu(shortcutSection) ?? buildMainMenu();
+        await api
+          .sendMessage(chatId, screen.text, {
+            parse_mode: 'HTML',
+            reply_markup: screen.reply_markup,
+          })
+          .catch(() => undefined);
+        continue;
+      }
+
+      if (rawText === '/analyze') {
+        const screen = buildSubMenu('trading') ?? buildMainMenu();
+        await api
+          .sendMessage(chatId, screen.text, {
+            parse_mode: 'HTML',
+            reply_markup: screen.reply_markup,
+          })
+          .catch(() => undefined);
+        continue;
+      }
+
+      if (rawText.startsWith('/analyze ')) {
+        const ticker = rawText.slice('/analyze '.length).trim().toUpperCase();
+        const prompt = `ใช้ TradingAgents วิเคราะห์หุ้น ${ticker} (ข้อมูลล่าสุด ภาษาไทย พร้อมแนบไฟล์ complete_report.html)`;
+        await api.sendChatAction(chatId, 'typing').catch(() => undefined);
+        const ack = await api
+          .sendMessage(
+            chatId,
+            `⏳ กำลังส่งคำสั่ง <b>TradingAgents</b> วิเคราะห์ <code>${escapeHtml(ticker)}</code>...`,
+            { parse_mode: 'HTML' },
+          )
+          .catch(() => null);
+        console.log(
+          JSON.stringify({
+            type: 'message',
+            chatId,
+            userId,
+            username,
+            messageId: msg.message_id,
+            statusMessageId: ack?.message_id ?? null,
+            text: prompt,
+            attachmentPath: null,
+            attachmentError: null,
+          }),
+        );
+        return;
+      }
+
+      if (rawText === '/drive') {
+        const screen = buildSubMenu('gdrive') ?? buildMainMenu();
+        await api
+          .sendMessage(chatId, screen.text, {
+            parse_mode: 'HTML',
+            reply_markup: screen.reply_markup,
+          })
+          .catch(() => undefined);
+        continue;
+      }
+
+      if (rawText === '/ping') {
+        await api
+          .sendMessage(chatId, '🏓 Pong! Antigravity Direct Relay พร้อมรับคำสั่งครับ')
+          .catch(() => undefined);
+        continue;
+      }
+
+      if (rawText === '/status' || rawText === '/mode') {
+        await api
+          .sendMessage(
+            chatId,
+            '🟢 <b>Antigravity Direct Relay (Hybrid Mode)</b>\n• สมอง AI: Antigravity ในแชทนี้โดยตรง\n• พิมพ์ <code>/menu</code> เพื่อเปิดเมนูหลัก หรือส่งงานมาได้เลย',
+            { parse_mode: 'HTML' },
+          )
+          .catch(() => undefined);
+        continue;
+      }
+
+      if (rawText === '/new') {
+        await api
+          .sendMessage(
+            chatId,
+            '✨ พร้อมรับหัวข้อใหม่แล้วครับ! พิมพ์ <code>/menu</code> เพื่อเลือกโปรเจกต์ หรือส่งคำสั่งใหม่มาได้เลย',
+            { parse_mode: 'HTML' },
+          )
+          .catch(() => undefined);
+        continue;
+      }
+
+      if (rawText === '/help') {
         const menu = buildMainMenu();
         await api
           .sendMessage(chatId, menu.text, {
@@ -222,53 +352,10 @@ async function main(): Promise<void> {
         continue;
       }
 
-      if (rawText === '/ping') {
-        await api
-          .sendMessage(chatId, '🏓 Pong! Antigravity Relay พร้อมรับคำสั่งครับ')
-          .catch(() => undefined);
-        continue;
-      }
-
-      if (rawText === '/status') {
-        await api
-          .sendMessage(
-            chatId,
-            '🟢 <b>Antigravity Direct Relay</b> ออนไลน์และพร้อมรับคำสั่งอยู่ครับ\nพิมพ์ <code>/menu</code> เพื่อเปิดเมนูเลือกโปรเจกต์ หรือพิมพ์งานที่ต้องการให้ทำได้เลย',
-            { parse_mode: 'HTML' },
-          )
-          .catch(() => undefined);
-        continue;
-      }
-
-      if (rawText === '/help') {
-        await api
-          .sendMessage(
-            chatId,
-            [
-              '🤖 <b>Antigravity Direct Telegram Relay</b>',
-              '',
-              'ส่งข้อความคำสั่ง รูปภาพ หรือไฟล์แนบมาได้เลย ผมจะดำเนินการให้บนแชท Antigravity โดยตรงแล้วส่งคำตอบกลับมาให้ครับ',
-              '',
-              '<b>คำสั่ง:</b>',
-              '/menu — 🏠 เปิดเมนูหลักเลือกใช้งาน Project',
-              '/status — เช็กสถานะการเชื่อมต่อ',
-              '/ping — ทดสอบการตอบสนอง',
-              '/whoami — ดู User ID / Chat ID',
-              '/stop_relay — หยุดรับคำสั่งจาก Telegram ชั่วคราว',
-            ].join('\n'),
-            { parse_mode: 'HTML' },
-          )
-          .catch(() => undefined);
-        continue;
-      }
-
       if (rawText === '/stop_relay' || rawText === '/stop-relay') {
-        await api
-          .sendMessage(chatId, '🛑 หยุดโหมด Antigravity Direct Relay แล้วครับ')
-          .catch(() => undefined);
         console.log(
           JSON.stringify({
-            type: 'stop_relay',
+            type: 'switch_standby',
             chatId,
             userId,
             username,

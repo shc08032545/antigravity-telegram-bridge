@@ -160,6 +160,45 @@ export function createAlwaysOnlineAgentBot(
     await ctx.reply(helpHtml, { parse_mode: 'HTML' });
   });
 
+  bot.command('news', async (ctx) => {
+    const screen = buildSubMenu('news') ?? buildMainMenu();
+    await ctx.reply(screen.text, {
+      parse_mode: 'HTML',
+      reply_markup: screen.reply_markup,
+    });
+  });
+
+  bot.command('drive', async (ctx) => {
+    const screen = buildSubMenu('gdrive') ?? buildMainMenu();
+    await ctx.reply(screen.text, {
+      parse_mode: 'HTML',
+      reply_markup: screen.reply_markup,
+    });
+  });
+
+  bot.command('shortfilm', async (ctx) => {
+    const screen = buildSubMenu('shortfilm') ?? buildMainMenu();
+    await ctx.reply(screen.text, {
+      parse_mode: 'HTML',
+      reply_markup: screen.reply_markup,
+    });
+  });
+
+  bot.command('projects', async (ctx) => {
+    const screen = buildSubMenu('projects') ?? buildMainMenu();
+    await ctx.reply(screen.text, {
+      parse_mode: 'HTML',
+      reply_markup: screen.reply_markup,
+    });
+  });
+
+  bot.command('stop_relay', async (ctx) => {
+    await ctx.reply(
+      'ℹ️ ขณะนี้บอตทำงานอยู่ในโหมด <b>Always-Online Standby Daemon</b> อยู่แล้วครับ (พิมพ์ <code>Relay</code> ในแชท Antigravity Web หากต้องการสลับกลับเป็น Direct Relay)',
+      { parse_mode: 'HTML' },
+    );
+  });
+
   bot.on('callback_query:data', async (ctx) => {
     const data = ctx.callbackQuery.data;
 
@@ -180,6 +219,29 @@ export function createAlwaysOnlineAgentBot(
             }),
           );
       }
+      return;
+    }
+
+    if (data === 'sys:status') {
+      await ctx.answerCallbackQuery().catch(() => undefined);
+      const uptimeSec = Math.floor((Date.now() - startedAt) / 1000);
+      await ctx.reply(
+        `🟢 <b>สถานะระบบ: Always-Online Standby Daemon</b>\n• Model: <code>${escapeHtml(currentModel)}</code>\n• Uptime: ${uptimeSec}s\n• พิมพ์ <code>Relay</code> ใน Antigravity Web เพื่อสลับกลับเป็น Direct Relay`,
+        { parse_mode: 'HTML' },
+      );
+      return;
+    }
+
+    if (data === 'sys:ping') {
+      await ctx.answerCallbackQuery({ text: '🏓 Pong!' }).catch(() => undefined);
+      await ctx.reply('🏓 Pong! Always-Online Standby Daemon พร้อมใช้งานครับ');
+      return;
+    }
+
+    if (data === 'sys:standby') {
+      await ctx
+        .answerCallbackQuery({ text: 'อยู่ในโหมด Standby อยู่แล้วครับ' })
+        .catch(() => undefined);
       return;
     }
 
