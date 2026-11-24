@@ -8,4 +8,5 @@ selectors.json
 tmp/
 uploads/
 .relay-offset
+.relay-model.json
 .relay-uploads/

@@ -6,7 +6,7 @@ import {
   splitMarkdownForTelegram,
   TELEGRAM_MAX_LENGTH,
 } from '../telegram/formatter.js';
-import { buildMainMenu } from './menu.js';
+import { buildMainMenu, buildModelMenu } from './menu.js';
 
 interface CliArgs {
   chatId: number;
@@ -16,6 +16,7 @@ interface CliArgs {
   photo?: string;
   document?: string;
   showMenu: boolean;
+  showModelMenu: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -26,6 +27,7 @@ function parseArgs(argv: string[]): CliArgs {
   let photo: string | undefined;
   let document: string | undefined;
   let showMenu = false;
+  let showModelMenu = false;
 
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
@@ -50,16 +52,18 @@ function parseArgs(argv: string[]): CliArgs {
       i += 1;
     } else if (flag === '--menu') {
       showMenu = true;
+    } else if (flag === '--model-menu') {
+      showModelMenu = true;
     }
   }
 
   if (!chatId || !Number.isSafeInteger(chatId)) {
     throw new Error(
-      'Usage: relay:reply --chat <chatId> [--edit <msgId>] [--menu] [--text <md> | --file <path> | stdin]',
+      'Usage: relay:reply --chat <chatId> [--edit <msgId>] [--menu | --model-menu] [--text <md> | --file <path> | stdin]',
     );
   }
 
-  return { chatId, editMessageId, text, file, photo, document, showMenu };
+  return { chatId, editMessageId, text, file, photo, document, showMenu, showModelMenu };
 }
 
 async function readStdin(): Promise<string> {
@@ -78,8 +82,8 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const api = new Api(config.telegramBotToken);
 
-  if (args.showMenu) {
-    const menu = buildMainMenu();
+  if (args.showMenu || args.showModelMenu) {
+    const menu = args.showModelMenu ? buildModelMenu() : buildMainMenu();
     if (args.editMessageId) {
       try {
         await api.editMessageText(args.chatId, args.editMessageId, menu.text, {

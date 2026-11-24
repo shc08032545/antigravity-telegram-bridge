@@ -22,9 +22,16 @@ import {
 } from './tools.js';
 import {
   buildMainMenu,
+  buildModelMenu,
   buildSubMenu,
   resolveActionPrompt,
 } from '../relay/menu.js';
+import {
+  loadModelState,
+  saveModelState,
+  type GeminiApiModel,
+  type RelayModelTier,
+} from '../relay/modelState.js';
 
 const AVAILABLE_MODELS = [
   'gemini-3.8-flash',
@@ -230,6 +237,43 @@ export function createAlwaysOnlineAgentBot(
       return;
     }
 
+    if (data.startsWith('model:relay:')) {
+      const tier = data.slice('model:relay:'.length) as RelayModelTier;
+      const updated = saveModelState({ relayTier: tier });
+      const screen = buildModelMenu(updated);
+      await ctx
+        .answerCallbackQuery({
+          text: `บันทึก Antigravity Tier: ${tier} แล้ว ✅`,
+        })
+        .catch(() => undefined);
+      await ctx
+        .editMessageText(screen.text, {
+          parse_mode: 'HTML',
+          reply_markup: screen.reply_markup,
+        })
+        .catch(() => undefined);
+      return;
+    }
+
+    if (data.startsWith('model:gemini:')) {
+      const geminiModel = data.slice('model:gemini:'.length) as GeminiApiModel;
+      currentModel = geminiModel;
+      const updated = saveModelState({ geminiModel });
+      const screen = buildModelMenu(updated);
+      await ctx
+        .answerCallbackQuery({
+          text: `เปลี่ยน Gemini Model เป็น ${geminiModel} แล้ว ✅`,
+        })
+        .catch(() => undefined);
+      await ctx
+        .editMessageText(screen.text, {
+          parse_mode: 'HTML',
+          reply_markup: screen.reply_markup,
+        })
+        .catch(() => undefined);
+      return;
+    }
+
     if (data === 'sys:status') {
       await ctx.answerCallbackQuery().catch(() => undefined);
       const uptimeSec = Math.floor((Date.now() - startedAt) / 1000);
@@ -297,21 +341,23 @@ export function createAlwaysOnlineAgentBot(
   bot.command('model', async (ctx) => {
     const requested = ctx.match?.trim();
     if (!requested) {
-      await ctx.reply(
-        [
-          `🧠 <b>โมเดลปัจจุบัน:</b> <code>${escapeHtml(currentModel)}</code>`,
-          '',
-          '<b>โมเดลที่รองรับ:</b>',
-          ...AVAILABLE_MODELS.map((m) => `• <code>${m}</code>`),
-          '',
-          'พิมพ์ <code>/model gemini-3.5-flash</code> เพื่อสลับโมเดลได้ทันที',
-        ].join('\n'),
-        { parse_mode: 'HTML' },
-      );
+      const screen = buildModelMenu({
+        ...loadModelState(),
+        geminiModel: AVAILABLE_MODELS.includes(currentModel as GeminiApiModel)
+          ? (currentModel as GeminiApiModel)
+          : loadModelState().geminiModel,
+      });
+      await ctx.reply(screen.text, {
+        parse_mode: 'HTML',
+        reply_markup: screen.reply_markup,
+      });
       return;
     }
 
     currentModel = requested;
+    if (AVAILABLE_MODELS.includes(requested as GeminiApiModel)) {
+      saveModelState({ geminiModel: requested as GeminiApiModel });
+    }
     await ctx.reply(`✅ เปลี่ยนโมเดลเป็น <code>${escapeHtml(currentModel)}</code> แล้วครับ`, {
       parse_mode: 'HTML',
     });

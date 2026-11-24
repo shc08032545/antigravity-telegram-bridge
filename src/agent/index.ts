@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { loadConfig } from '../config.js';
 import { Logger } from '../utils/logger.js';
 import { syncTelegramMenuCommands } from '../relay/menu.js';
+import { loadModelState } from '../relay/modelState.js';
 import { createAlwaysOnlineAgentBot } from './bot.js';
 
 function resolveGoogleApiKey(): string {
@@ -27,7 +28,7 @@ function resolveGoogleApiKey(): string {
 async function main(): Promise<void> {
   const config = loadConfig();
   const googleApiKey = resolveGoogleApiKey();
-  const model = process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash';
+  const model = process.env.GEMINI_MODEL?.trim() || loadModelState().geminiModel;
   const logger = new Logger(config.logLevel, [
     config.telegramBotToken,
     googleApiKey,

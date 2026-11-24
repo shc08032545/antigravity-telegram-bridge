@@ -1,4 +1,8 @@
 import { type Api, InlineKeyboard } from 'grammy';
+import {
+  loadModelState,
+  type ModelSelectionState,
+} from './modelState.js';
 
 export interface MenuScreen {
   text: string;
@@ -11,6 +15,7 @@ export interface MenuScreen {
  */
 export const BOT_COMMANDS = [
   { command: 'menu', description: '🏠 เมนูหลักเลือกใช้งาน Project' },
+  { command: 'model', description: '🧠 เลือก Model (Antigravity / Gemini)' },
   { command: 'affiliate', description: '🛍 ทำคลิป Affiliate 30 วิ (เก็บลง Drive)' },
   { command: 'analyze', description: '📊 วิเคราะห์หุ้น (เช่น /analyze NVDA)' },
   { command: 'news', description: '📰 ข่าวหุ้นอเมริกา & ข่าวไทยวันนี้' },
@@ -18,7 +23,6 @@ export const BOT_COMMANDS = [
   { command: 'shortfilm', description: '🎬 โปรดิวเซอร์หนังสั้น AI 15 ฉาก' },
   { command: 'projects', description: '📁 จัดการโปรเจกต์ใน Workspace' },
   { command: 'status', description: '🟢 เช็กสถานะระบบและโหมดปัจจุบัน' },
-  { command: 'new', description: '✨ ล้างความจำเริ่มคุยใหม่' },
   { command: 'stop_relay', description: '🔄 สลับเข้าโหมด Standby อัตโนมัติ' },
 ];
 
@@ -227,12 +231,18 @@ export function buildSubMenu(section: string): MenuScreen | null {
     };
   }
 
+  if (section === 'model') {
+    return buildModelMenu();
+  }
+
   if (section === 'system') {
+    const state = loadModelState();
     const kb = new InlineKeyboard()
-      .text('🟢 เช็กสถานะระบบ', 'sys:status')
-      .text('🏓 ทดสอบ Ping', 'sys:ping')
+      .text('🧠 เลือก Model', 'menu:model')
+      .text('🟢 เช็กสถานะ', 'sys:status')
       .row()
-      .text('🔄 สลับเข้าโหมด Standby Daemon', 'sys:standby')
+      .text('🏓 ทดสอบ Ping', 'sys:ping')
+      .text('🔄 สลับ Standby', 'sys:standby')
       .row()
       .text('⬅️ กลับเมนูหลัก', 'menu:main');
 
@@ -240,14 +250,60 @@ export function buildSubMenu(section: string): MenuScreen | null {
       text: [
         '⚙️ <b>สถานะระบบ & โหมดการทำงาน (Hybrid)</b>',
         '',
+        `• <b>Antigravity Tier:</b> <code>${state.relayTier}</code>`,
+        `• <b>Gemini API Model:</b> <code>${state.geminiModel}</code>`,
         '• <b>Direct Relay:</b> ใช้สมอง Antigravity ในแชทนี้โดยตรง',
-        '• <b>Standby Daemon:</b> ออนไลน์ 24/7 ด้วย Gemini API + เครื่องมือครบชุด',
+        '• <b>Standby Daemon:</b> ออนไลน์ 24/7 ด้วย Gemini API',
       ].join('\n'),
       reply_markup: kb,
     };
   }
 
   return null;
+}
+
+export function buildModelMenu(state: ModelSelectionState = loadModelState()): MenuScreen {
+  const mark = (selected: boolean, label: string) =>
+    selected ? `✅ ${label}` : label;
+
+  const kb = new InlineKeyboard()
+    .text(mark(state.relayTier === 'inherit', '⚡ Default'), 'model:relay:inherit')
+    .text(mark(state.relayTier === 'pro', '🧠 Pro'), 'model:relay:pro')
+    .row()
+    .text(mark(state.relayTier === 'flash', '🚀 Flash'), 'model:relay:flash')
+    .text(mark(state.relayTier === 'flash_lite', '🪶 Flash Lite'), 'model:relay:flash_lite')
+    .row()
+    .text(
+      mark(state.geminiModel === 'gemini-3.8-flash', '✨ gemini-3.8-flash'),
+      'model:gemini:gemini-3.8-flash',
+    )
+    .row()
+    .text(
+      mark(state.geminiModel === 'gemini-3.5-flash', '⚡ gemini-3.5-flash'),
+      'model:gemini:gemini-3.5-flash',
+    )
+    .text(
+      mark(state.geminiModel === 'gemini-3.5-flash-lite', '🪶 3.5-flash-lite'),
+      'model:gemini:gemini-3.5-flash-lite',
+    )
+    .row()
+    .text('⬅️ กลับเมนูหลัก', 'menu:main');
+
+  return {
+    text: [
+      '🧠 <b>เลือก Model ที่ใช้งาน</b>',
+      '',
+      '<b>1) Antigravity Tier (โหมด Direct Relay — แถว 1–2):</b>',
+      `• ปัจจุบัน: <code>${state.relayTier}</code>`,
+      '  <i>(Default = โมเดลหลักของแชท, Pro/Flash/Flash Lite = เรียก subagent tier นั้นทำงานให้)</i>',
+      '',
+      '<b>2) Gemini API Model (Standby Daemon & TradingAgents — แถว 3–4):</b>',
+      `• ปัจจุบัน: <code>${state.geminiModel}</code>`,
+      '',
+      'แตะปุ่มด้านล่างเพื่อเปลี่ยนได้ทันทีครับ:',
+    ].join('\n'),
+    reply_markup: kb,
+  };
 }
 
 export function resolveActionPrompt(callbackData: string): string | null {

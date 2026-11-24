@@ -7,10 +7,17 @@ import { isAuthorized, loadConfig } from '../config.js';
 import { escapeHtml } from '../telegram/formatter.js';
 import {
   buildMainMenu,
+  buildModelMenu,
   buildSubMenu,
   resolveActionPrompt,
   syncTelegramMenuCommands,
 } from './menu.js';
+import {
+  loadModelState,
+  saveModelState,
+  type GeminiApiModel,
+  type RelayModelTier,
+} from './modelState.js';
 
 const execFileAsync = promisify(execFile);
 const OFFSET_FILE = path.resolve('.relay-offset');
@@ -159,12 +166,53 @@ async function main(): Promise<void> {
           continue;
         }
 
+        if (data.startsWith('model:relay:')) {
+          const tier = data.slice('model:relay:'.length) as RelayModelTier;
+          const updated = saveModelState({ relayTier: tier });
+          const screen = buildModelMenu(updated);
+          await api
+            .answerCallbackQuery(cb.id, {
+              text: `เปลี่ยน Antigravity Tier เป็น ${tier} แล้ว ✅`,
+            })
+            .catch(() => undefined);
+          if (cb.message && 'message_id' in cb.message) {
+            await api
+              .editMessageText(chatId, cb.message.message_id, screen.text, {
+                parse_mode: 'HTML',
+                reply_markup: screen.reply_markup,
+              })
+              .catch(() => undefined);
+          }
+          continue;
+        }
+
+        if (data.startsWith('model:gemini:')) {
+          const geminiModel = data.slice('model:gemini:'.length) as GeminiApiModel;
+          const updated = saveModelState({ geminiModel });
+          const screen = buildModelMenu(updated);
+          await api
+            .answerCallbackQuery(cb.id, {
+              text: `เปลี่ยน Gemini Model เป็น ${geminiModel} แล้ว ✅`,
+            })
+            .catch(() => undefined);
+          if (cb.message && 'message_id' in cb.message) {
+            await api
+              .editMessageText(chatId, cb.message.message_id, screen.text, {
+                parse_mode: 'HTML',
+                reply_markup: screen.reply_markup,
+              })
+              .catch(() => undefined);
+          }
+          continue;
+        }
+
         if (data === 'sys:status') {
+          const state = loadModelState();
           await api.answerCallbackQuery(cb.id).catch(() => undefined);
           await api
             .sendMessage(
               chatId,
-              '🟢 <b>สถานะระบบ: Antigravity Direct Relay (Hybrid Mode)</b>\n• สมอง AI: Antigravity ในแชทนี้โดยตรง\n• Auto-Fallback: สลับเป็น Always-Online Daemon อัตโนมัติหากว่างเกิน 20 นาที',
+              `🟢 <b>สถานะระบบ: Antigravity Direct Relay (Hybrid Mode)</b>\n• Antigravity Tier: <code>${state.relayTier}</code>\n• Gemini API Model: <code>${state.geminiModel}</code>\n• Auto-Fallback: สลับเป็น Always-Online Daemon อัตโนมัติหากว่างเกิน 20 นาที`,
               { parse_mode: 'HTML' },
             )
             .catch(() => undefined);
@@ -220,6 +268,7 @@ async function main(): Promise<void> {
               messageId: cb.message?.message_id ?? null,
               statusMessageId: ack?.message_id ?? null,
               text: actionPrompt,
+              selectedModel: loadModelState(),
               attachmentPath: null,
               attachmentError: null,
             }),
@@ -272,6 +321,7 @@ async function main(): Promise<void> {
       const menuShortcutMap: Record<string, string> = {
         '/menu': 'main',
         '/start': 'main',
+        '/model': 'model',
         '/affiliate': 'affiliate',
         '/news': 'news',
         '/shortfilm': 'shortfilm',
@@ -447,6 +497,7 @@ async function main(): Promise<void> {
           messageId: msg.message_id,
           statusMessageId: ack?.message_id ?? null,
           text: rawText,
+          selectedModel: loadModelState(),
           attachmentPath,
           attachmentError,
         }),

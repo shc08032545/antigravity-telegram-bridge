@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { loadModelState } from '../relay/modelState.js';
 import type {
   GeminiClient,
   GeminiFunctionDeclaration,
@@ -74,7 +75,7 @@ export async function runTradingAgentsAnalysis(params: {
       timeoutMs: 8 * 60 * 1000, // up to 8 min for multi-agent analysis
       env: {
         ...process.env,
-        TRADINGAGENTS_DEEP_THINK_LLM: 'gemini-3.5-flash',
+        TRADINGAGENTS_DEEP_THINK_LLM: loadModelState().geminiModel,
         TRADINGAGENTS_QUICK_THINK_LLM: 'gemini-3.5-flash-lite',
         TRADINGAGENTS_OUTPUT_LANGUAGE: 'Thai',
       },
