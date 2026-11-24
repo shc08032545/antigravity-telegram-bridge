@@ -3,7 +3,7 @@ import path from 'node:path';
 import dotenv from 'dotenv';
 import { loadConfig } from '../config.js';
 import { Logger } from '../utils/logger.js';
-import { BOT_COMMANDS } from '../relay/menu.js';
+import { syncTelegramMenuCommands } from '../relay/menu.js';
 import { createAlwaysOnlineAgentBot } from './bot.js';
 
 function resolveGoogleApiKey(): string {
@@ -51,12 +51,10 @@ async function main(): Promise<void> {
   process.once('SIGINT', () => shutdown('SIGINT'));
   process.once('SIGTERM', () => shutdown('SIGTERM'));
 
-  await bot.api
-    .setMyCommands(BOT_COMMANDS)
-    .catch((err) => logger.warn('Failed to update bot command list', err));
-  await bot.api
-    .setChatMenuButton({ menu_button: { type: 'commands' } })
-    .catch(() => undefined);
+  await syncTelegramMenuCommands(bot.api, [
+    ...config.allowedUserIds,
+    ...config.allowedChatIds,
+  ]).catch((err) => logger.warn('Failed to sync bot menu commands', err));
 
   // Clear webhook & start resilient long-polling loop
   await bot.api

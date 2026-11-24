@@ -6,10 +6,10 @@ import { Api } from 'grammy';
 import { isAuthorized, loadConfig } from '../config.js';
 import { escapeHtml } from '../telegram/formatter.js';
 import {
-  BOT_COMMANDS,
   buildMainMenu,
   buildSubMenu,
   resolveActionPrompt,
+  syncTelegramMenuCommands,
 } from './menu.js';
 
 const execFileAsync = promisify(execFile);
@@ -94,10 +94,10 @@ async function main(): Promise<void> {
   let offset = await readOffset();
 
   await api.deleteWebhook({ drop_pending_updates: false }).catch(() => undefined);
-  await api.setMyCommands(BOT_COMMANDS).catch(() => undefined);
-  await api
-    .setChatMenuButton({ menu_button: { type: 'commands' } })
-    .catch(() => undefined);
+  await syncTelegramMenuCommands(api, [
+    ...config.allowedUserIds,
+    ...config.allowedChatIds,
+  ]);
 
   const maxBytes = config.maxFileSizeMb * 1024 * 1024;
 

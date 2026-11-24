@@ -1,4 +1,4 @@
-import { InlineKeyboard } from 'grammy';
+import { type Api, InlineKeyboard } from 'grammy';
 
 export interface MenuScreen {
   text: string;
@@ -21,6 +21,30 @@ export const BOT_COMMANDS = [
   { command: 'new', description: '✨ ล้างความจำเริ่มคุยใหม่' },
   { command: 'stop_relay', description: '🔄 สลับเข้าโหมด Standby อัตโนมัติ' },
 ];
+
+/**
+ * Clears stale command scopes (e.g. old all_private_chats overrides)
+ * and registers BOT_COMMANDS cleanly on both default and all_private_chats.
+ */
+export async function syncTelegramMenuCommands(
+  api: Api,
+  chatIds: number[] = [],
+): Promise<void> {
+  await api.deleteMyCommands({ scope: { type: 'all_private_chats' } }).catch(() => undefined);
+  await api.deleteMyCommands({ scope: { type: 'all_group_chats' } }).catch(() => undefined);
+  for (const chatId of chatIds) {
+    await api
+      .deleteMyCommands({ scope: { type: 'chat', chat_id: chatId } })
+      .catch(() => undefined);
+  }
+  await api.setMyCommands(BOT_COMMANDS).catch(() => undefined);
+  await api
+    .setMyCommands(BOT_COMMANDS, { scope: { type: 'all_private_chats' } })
+    .catch(() => undefined);
+  await api
+    .setChatMenuButton({ menu_button: { type: 'commands' } })
+    .catch(() => undefined);
+}
 
 export function buildMainMenu(): MenuScreen {
   const kb = new InlineKeyboard()
