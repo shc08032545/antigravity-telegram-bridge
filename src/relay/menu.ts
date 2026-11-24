@@ -11,6 +11,7 @@ export interface MenuScreen {
  */
 export const BOT_COMMANDS = [
   { command: 'menu', description: '🏠 เมนูหลักเลือกใช้งาน Project' },
+  { command: 'affiliate', description: '🛍 ทำคลิป Affiliate 30 วิ (เก็บลง Drive)' },
   { command: 'analyze', description: '📊 วิเคราะห์หุ้น (เช่น /analyze NVDA)' },
   { command: 'news', description: '📰 ข่าวหุ้นอเมริกา & ข่าวไทยวันนี้' },
   { command: 'drive', description: '☁️ เช็กสถานะและไฟล์ Google Drive' },
@@ -23,6 +24,8 @@ export const BOT_COMMANDS = [
 
 export function buildMainMenu(): MenuScreen {
   const kb = new InlineKeyboard()
+    .text('🛍 Affiliate Studio (30 วิ → Drive)', 'menu:affiliate')
+    .row()
     .text('📊 วิเคราะห์หุ้น (TradingAgents)', 'menu:trading')
     .row()
     .text('📰 ข่าว & ตลาดวันนี้', 'menu:news')
@@ -153,12 +156,36 @@ export function buildSubMenu(section: string): MenuScreen | null {
     };
   }
 
+  if (section === 'affiliate') {
+    const kb = new InlineKeyboard()
+      .text('🎬 เริ่มทำคลิปสินค้าใหม่ (ส่งรูป/ข้อมูล)', 'act:affiliate:start')
+      .row()
+      .text('☁️ ดูไฟล์ Output ใน Google Drive', 'act:affiliate:drive')
+      .row()
+      .text('📁 สถานะโปรเจกต์ใน Workspace', 'act:affiliate:status')
+      .row()
+      .text('⬅️ กลับเมนูหลัก', 'menu:main');
+
+    return {
+      text: [
+        '🛍 <b>Motion Infographic Affiliate Studio (v2.9)</b>',
+        '• Repo: <code>shc08032545/motion-infographic-affiliate</code>',
+        '• Output Drive: <code>04_AI_โปรเจกต์และโน้ต / โปรเจกต์และเอกสาร_AI / motion-infographic-affiliate</code>',
+        '',
+        'ส่ง <b>รูปสินค้า + ชื่อ/จุดเด่น</b> มาในแชทนี้ได้เลย ระบบจะถามโหมด <b>YES VIDEO / NO VIDEO</b> แล้วสร้างชุดงาน Master Prompt 30 วิ (9:16) พร้อมอัปโหลดไฟล์ Output ลง Google Drive ให้อัตโนมัติ!',
+      ].join('\n'),
+      reply_markup: kb,
+    };
+  }
+
   if (section === 'projects') {
     const kb = new InlineKeyboard()
+      .text('🛍 Affiliate Studio', 'menu:affiliate')
       .text('📊 TradingAgents', 'menu:trading')
-      .text('🎬 Shortfilm Studio', 'menu:shortfilm')
       .row()
+      .text('🎬 Shortfilm Studio', 'menu:shortfilm')
       .text('🤖 Telegram Bridge', 'act:bridge:tree')
+      .row()
       .text('🧪 Test Repo', 'act:test:status')
       .row()
       .text('⬅️ กลับเมนูหลัก', 'menu:main');
@@ -166,6 +193,7 @@ export function buildSubMenu(section: string): MenuScreen | null {
     return {
       text: [
         '📁 <b>โปรเจกต์ใน Workspace (/home/antigravity)</b>',
+        '• <code>motion-infographic-affiliate</code> — คลิปขายสินค้า Affiliate 30 วิ (Output → Drive)',
         '• <code>TradingAgents</code> — วิเคราะห์หุ้น Multi-Agent',
         '• <code>thai-shortfilm-studio</code> — โปรดิวเซอร์หนังสั้น AI',
         '• <code>antigravity-telegram-bridge</code> — สะพาน Telegram Bot',
@@ -208,6 +236,12 @@ export function resolveActionPrompt(callbackData: string): string | null {
   }
 
   const map: Record<string, string> = {
+    'act:affiliate:start':
+      'พร้อมเริ่มโปรเจกต์ใหม่ด้วย skill motion-infographic-affiliate v2.9 (Output เก็บลง Google Drive โฟลเดอร์ 1DaX-ltIh5DHTt-qGrK3rRZxmdz-M5nXW) — แนะนำสั้นๆ ให้ผู้ใช้ส่งรูป/ข้อมูลสินค้าและเลือก YES VIDEO หรือ NO VIDEO',
+    'act:affiliate:drive':
+      'แสดงรายการไฟล์และโฟลเดอร์ Output ใน Google Drive โฟลเดอร์ motion-infographic-affiliate (ID: 1DaX-ltIh5DHTt-qGrK3rRZxmdz-M5nXW) พร้อมลิงก์เปิดดู',
+    'act:affiliate:status':
+      'ตรวจสอบไฟล์และสถานะ git ในโปรเจกต์ /home/antigravity/shc08032545/motion-infographic-affiliate',
     'act:shortfilm:new_idea': 'ไอเดียเรื่องใหม่ (ใช้ skill thai-shortfilm-studio)',
     'act:shortfilm:status':
       'ตรวจสอบไฟล์และสถานะ git ในโปรเจกต์ /home/antigravity/shc08032545/thai-shortfilm-studio',

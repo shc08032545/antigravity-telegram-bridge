@@ -160,6 +160,14 @@ export function createAlwaysOnlineAgentBot(
     await ctx.reply(helpHtml, { parse_mode: 'HTML' });
   });
 
+  bot.command('affiliate', async (ctx) => {
+    const screen = buildSubMenu('affiliate') ?? buildMainMenu();
+    await ctx.reply(screen.text, {
+      parse_mode: 'HTML',
+      reply_markup: screen.reply_markup,
+    });
+  });
+
   bot.command('news', async (ctx) => {
     const screen = buildSubMenu('news') ?? buildMainMenu();
     await ctx.reply(screen.text, {

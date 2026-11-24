@@ -246,6 +246,7 @@ async function main(): Promise<void> {
       const menuShortcutMap: Record<string, string> = {
         '/menu': 'main',
         '/start': 'main',
+        '/affiliate': 'affiliate',
         '/news': 'news',
         '/shortfilm': 'shortfilm',
         '/projects': 'projects',
