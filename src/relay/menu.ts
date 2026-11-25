@@ -21,6 +21,7 @@ export const BOT_COMMANDS = [
   { command: 'news', description: '📰 ข่าวหุ้นอเมริกา & ข่าวไทยวันนี้' },
   { command: 'drive', description: '☁️ เช็กสถานะและไฟล์ Google Drive' },
   { command: 'shortfilm', description: '🎬 โปรดิวเซอร์หนังสั้น AI 15 ฉาก' },
+  { command: 'hyperframes', description: '🎞 แอนิเมชัน SVG / Motion Video (HyperFrames)' },
   { command: 'projects', description: '📁 จัดการโปรเจกต์ใน Workspace' },
   { command: 'status', description: '🟢 เช็กสถานะระบบและโหมดปัจจุบัน' },
   { command: 'stop_relay', description: '🔄 สลับเข้าโหมด Standby อัตโนมัติ' },
@@ -53,6 +54,8 @@ export async function syncTelegramMenuCommands(
 export function buildMainMenu(): MenuScreen {
   const kb = new InlineKeyboard()
     .text('🛍 Affiliate Studio (30 วิ → Drive)', 'menu:affiliate')
+    .row()
+    .text('🎞 HyperFrames Studio (SVG Video)', 'menu:hyperframes')
     .row()
     .text('📊 วิเคราะห์หุ้น (TradingAgents)', 'menu:trading')
     .row()
@@ -206,14 +209,37 @@ export function buildSubMenu(section: string): MenuScreen | null {
     };
   }
 
+  if (section === 'hyperframes') {
+    const kb = new InlineKeyboard()
+      .text('📱 สร้างคลิป SVG แนวตั้ง 9:16 (60 วิ)', 'act:hyperframes:new_vertical')
+      .row()
+      .text('🖥 สร้างคลิป SVG แนวนอน 16:9 (90 วิ)', 'act:hyperframes:new_landscape')
+      .row()
+      .text('📂 ดูคลิปและโปรเจกต์ที่สร้างไว้', 'act:hyperframes:list')
+      .row()
+      .text('⬅️ กลับเมนูหลัก', 'menu:main');
+
+    return {
+      text: [
+        '🎞 <b>HyperFrames Studio — SVG Cinematic Motion Video</b>',
+        '• Workspace: <code>/home/antigravity/shc08032545/hyperframes-studio</code>',
+        '• Engine: <code>hyperframes</code> (HTML/SVG + GSAP → MP4) + เสียงพากย์ <b>Google AI Studio (Gemini TTS)</b>',
+        '',
+        'แตะเลือกรูปแบบด้านล่าง หรือพิมพ์หัวข้อเรื่อง + สัดส่วนที่ต้องการได้เลยครับ!',
+      ].join('\n'),
+      reply_markup: kb,
+    };
+  }
+
   if (section === 'projects') {
     const kb = new InlineKeyboard()
       .text('🛍 Affiliate Studio', 'menu:affiliate')
+      .text('🎞 HyperFrames Studio', 'menu:hyperframes')
+      .row()
       .text('📊 TradingAgents', 'menu:trading')
-      .row()
       .text('🎬 Shortfilm Studio', 'menu:shortfilm')
-      .text('🤖 Telegram Bridge', 'act:bridge:tree')
       .row()
+      .text('🤖 Telegram Bridge', 'act:bridge:tree')
       .text('🧪 Test Repo', 'act:test:status')
       .row()
       .text('⬅️ กลับเมนูหลัก', 'menu:main');
@@ -221,6 +247,7 @@ export function buildSubMenu(section: string): MenuScreen | null {
     return {
       text: [
         '📁 <b>โปรเจกต์ใน Workspace (/home/antigravity)</b>',
+        '• <code>hyperframes-studio</code> — แอนิเมชัน SVG Cinematic + พากย์ Google AI Studio',
         '• <code>motion-infographic-affiliate</code> — คลิปขายสินค้า Affiliate 30 วิ (Output → Drive)',
         '• <code>TradingAgents</code> — วิเคราะห์หุ้น Multi-Agent',
         '• <code>thai-shortfilm-studio</code> — โปรดิวเซอร์หนังสั้น AI',
@@ -325,6 +352,12 @@ export function resolveActionPrompt(callbackData: string): string | null {
     'act:shortfilm:new_idea': 'ไอเดียเรื่องใหม่ (ใช้ skill thai-shortfilm-studio)',
     'act:shortfilm:status':
       'ตรวจสอบไฟล์และสถานะ git ในโปรเจกต์ /home/antigravity/shc08032545/thai-shortfilm-studio',
+    'act:hyperframes:new_vertical':
+      'พร้อมสร้างวิดีโอแอนิเมชัน SVG Cinematic แนวตั้ง 9:16 ความยาว 60 วินาที ด้วย HyperFrames + พากย์เสียง Google AI Studio (Gemini TTS) — แนะนำสั้นๆ ให้ผู้ใช้พิมพ์หัวข้อเรื่องที่อยากเล่าได้เลย',
+    'act:hyperframes:new_landscape':
+      'พร้อมสร้างวิดีโอแอนิเมชัน SVG Cinematic แนวนอน 16:9 ความยาว 90 วินาที ด้วย HyperFrames + พากย์เสียง Google AI Studio (Gemini TTS) — แนะนำสั้นๆ ให้ผู้ใช้พิมพ์หัวข้อเรื่องที่อยากเล่าได้เลย',
+    'act:hyperframes:list':
+      'แสดงรายการโปรเจกต์และไฟล์วิดีโอ MP4 ทั้งหมดใน /home/antigravity/shc08032545/hyperframes-studio พร้อมขนาดไฟล์และสถานะล่าสุด',
     'act:bridge:status':
       'ตรวจสอบ git status และรัน npm test ในโปรเจกต์ /home/antigravity/shc08032545/antigravity-telegram-bridge',
     'act:bridge:tree':

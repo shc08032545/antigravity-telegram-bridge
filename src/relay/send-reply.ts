@@ -15,6 +15,8 @@ interface CliArgs {
   file?: string;
   photo?: string;
   document?: string;
+  video?: string;
+  caption?: string;
   showMenu: boolean;
   showModelMenu: boolean;
 }
@@ -26,6 +28,8 @@ function parseArgs(argv: string[]): CliArgs {
   let file: string | undefined;
   let photo: string | undefined;
   let document: string | undefined;
+  let video: string | undefined;
+  let caption: string | undefined;
   let showMenu = false;
   let showModelMenu = false;
 
@@ -50,6 +54,12 @@ function parseArgs(argv: string[]): CliArgs {
     } else if (flag === '--document' && next) {
       document = next;
       i += 1;
+    } else if (flag === '--video' && next) {
+      video = next;
+      i += 1;
+    } else if (flag === '--caption' && next !== undefined) {
+      caption = next;
+      i += 1;
     } else if (flag === '--menu') {
       showMenu = true;
     } else if (flag === '--model-menu') {
@@ -63,7 +73,7 @@ function parseArgs(argv: string[]): CliArgs {
     );
   }
 
-  return { chatId, editMessageId, text, file, photo, document, showMenu, showModelMenu };
+  return { chatId, editMessageId, text, file, photo, document, video, caption, showMenu, showModelMenu };
 }
 
 async function readStdin(): Promise<string> {
@@ -151,6 +161,13 @@ async function main(): Promise<void> {
 
   if (args.document) {
     await api.sendDocument(args.chatId, new InputFile(args.document));
+  }
+
+  if (args.video) {
+    await api.sendVideo(args.chatId, new InputFile(args.video), {
+      caption: args.caption,
+      supports_streaming: true,
+    });
   }
 }
 

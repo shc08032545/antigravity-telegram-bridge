@@ -325,6 +325,7 @@ async function main(): Promise<void> {
         '/affiliate': 'affiliate',
         '/news': 'news',
         '/shortfilm': 'shortfilm',
+        '/hyperframes': 'hyperframes',
         '/projects': 'projects',
       };
 

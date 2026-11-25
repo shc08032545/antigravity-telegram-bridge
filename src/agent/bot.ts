@@ -199,6 +199,14 @@ export function createAlwaysOnlineAgentBot(
     });
   });
 
+  bot.command('hyperframes', async (ctx) => {
+    const screen = buildSubMenu('hyperframes') ?? buildMainMenu();
+    await ctx.reply(screen.text, {
+      parse_mode: 'HTML',
+      reply_markup: screen.reply_markup,
+    });
+  });
+
   bot.command('projects', async (ctx) => {
     const screen = buildSubMenu('projects') ?? buildMainMenu();
     await ctx.reply(screen.text, {
