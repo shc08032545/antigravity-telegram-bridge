@@ -15,16 +15,15 @@ export interface MenuScreen {
  */
 export const BOT_COMMANDS = [
   { command: 'menu', description: '🏠 เมนูหลักเลือกใช้งาน Project' },
-  { command: 'model', description: '🧠 เลือก Model (Antigravity / Gemini)' },
+  { command: 'hyperframes', description: '🎞 สารคดี v8.0 (Hybrid 50/50 • ≤2 นาที)' },
+  { command: 'shortfilm', description: '🎬 หนังสั้น AI 15 ฉาก (สาเหตุ→หักมุม→ทางออก)' },
   { command: 'affiliate', description: '🛍 ทำคลิป Affiliate 30 วิ (เก็บลง Drive)' },
   { command: 'analyze', description: '📊 วิเคราะห์หุ้น (เช่น /analyze NVDA)' },
   { command: 'news', description: '📰 ข่าวหุ้นอเมริกา & ข่าวไทยวันนี้' },
   { command: 'drive', description: '☁️ เช็กสถานะและไฟล์ Google Drive' },
-  { command: 'shortfilm', description: '🎬 โปรดิวเซอร์หนังสั้น AI 15 ฉาก' },
-  { command: 'hyperframes', description: '🎞 แอนิเมชัน SVG / Motion Video (HyperFrames)' },
   { command: 'projects', description: '📁 จัดการโปรเจกต์ใน Workspace' },
-  { command: 'status', description: '🟢 เช็กสถานะระบบและโหมดปัจจุบัน' },
-  { command: 'stop_relay', description: '🔄 สลับเข้าโหมด Standby อัตโนมัติ' },
+  { command: 'model', description: '🧠 เลือก Model (Antigravity / Gemini)' },
+  { command: 'status', description: '🟢 เช็กสถานะระบบ Direct Relay' },
 ];
 
 /**
@@ -53,19 +52,19 @@ export async function syncTelegramMenuCommands(
 
 export function buildMainMenu(): MenuScreen {
   const kb = new InlineKeyboard()
+    .text('🎞 HyperFrames v8.0 (Hybrid 50/50 • ≤2 นาที)', 'menu:hyperframes')
+    .row()
+    .text('🎬 หนังสั้น AI (สาเหตุ→หักมุม→ทางออก)', 'menu:shortfilm')
+    .row()
     .text('🛍 Affiliate Studio (30 วิ → Drive)', 'menu:affiliate')
     .row()
-    .text('🎞 HyperFrames Studio (SVG Video)', 'menu:hyperframes')
-    .row()
-    .text('📊 วิเคราะห์หุ้น (TradingAgents)', 'menu:trading')
-    .row()
+    .text('📊 วิเคราะห์หุ้น', 'menu:trading')
     .text('📰 ข่าว & ตลาดวันนี้', 'menu:news')
-    .text('☁️ Google Drive', 'menu:gdrive')
     .row()
-    .text('🎬 หนังสั้น AI Studio', 'menu:shortfilm')
+    .text('☁️ Google Drive', 'menu:gdrive')
     .text('🐙 GitHub & Repos', 'menu:github')
     .row()
-    .text('📁 โปรเจกต์ใน Workspace', 'menu:projects')
+    .text('📁 Workspace & Toolkit', 'menu:projects')
     .text('⚙️ สถานะ & โหมด', 'menu:system');
 
   return {
@@ -149,18 +148,21 @@ export function buildSubMenu(section: string): MenuScreen | null {
 
   if (section === 'shortfilm') {
     const kb = new InlineKeyboard()
-      .text('💡 ไอเดียเรื่องใหม่ (15 ฉาก)', 'act:shortfilm:new_idea')
+      .text('💡 ไอเดียข่าวจริงใหม่ (สาเหตุ→หักมุม→ทางออก)', 'act:shortfilm:new_idea')
       .row()
-      .text('📁 เช็กไฟล์ในโปรเจกต์', 'act:shortfilm:status')
+      .text('📋 เช็กลิสต์ตอนทั้งหมด (EPISODE_CHECKLIST)', 'act:shortfilm:checklist')
+      .row()
+      .text('☁️ ไฟล์ใน Drive', 'act:shortfilm:drive')
+      .text('📁 ไฟล์ใน Workspace', 'act:shortfilm:status')
       .row()
       .text('⬅️ กลับเมนูหลัก', 'menu:main');
 
     return {
       text: [
-        '🎬 <b>Thai Shortfilm Studio</b>',
-        '<code>/home/antigravity/shc08032545/thai-shortfilm-studio</code>',
-        '',
-        'โปรดิวเซอร์หนังสั้น AI ภาษาไทย 15 ฉาก × 10 วิ (9:16, TikTok/Reels/Shorts)',
+        '🎬 <b>Thai Shortfilm Studio (Real-News 3-Act)</b>',
+        '• โครงสร้าง: <b>ข่าวจริง • สาเหตุ (S01–05) → หักมุม (S06–10) → แนวทางแก้ไข (S11–15)</b>',
+        '• มาตรฐาน: <b>15 ฉาก × 10 วิ • 9:16 • 24fps</b> + แพ็กครบ 6 ไฟล์ขึ้น Drive อัตโนมัติ',
+        '• Repo: <code>shc08032545/thai-shortfilm-studio</code>',
       ].join('\n'),
       reply_markup: kb,
     };
@@ -211,21 +213,32 @@ export function buildSubMenu(section: string): MenuScreen | null {
 
   if (section === 'hyperframes') {
     const kb = new InlineKeyboard()
-      .text('📱 สร้างคลิป SVG แนวตั้ง 9:16 (60 วิ)', 'act:hyperframes:new_vertical')
+      .text('🔎 หาข่าวร้อนวันนี้ → เสนอหัวข้อ EP ใหม่', 'act:hyperframes:find_news')
       .row()
-      .text('🖥 สร้างคลิป SVG แนวนอน 16:9 (90 วิ)', 'act:hyperframes:new_landscape')
+      .text('🎬 สร้างตอนใหม่ 9:16 (v8.0 • ≤2 นาที)', 'act:hyperframes:new_vertical')
       .row()
-      .text('📂 ดูคลิปและโปรเจกต์ที่สร้างไว้', 'act:hyperframes:list')
+      .text('🖥 สร้างตอนใหม่ 16:9 YouTube (v8.0 • ≤2 นาที)', 'act:hyperframes:new_landscape')
+      .row()
+      .text('🖼️ ฝังปก 9:16 + กล่อง Copy แคปชั่น', 'act:hyperframes:embed_cover')
+      .row()
+      .text('⚡ อัปเกรดคลิปเก่า → v8.0 Hybrid 50/50', 'act:hyperframes:upgrade_existing')
+      .row()
+      .text('📂 คลิปใน Workspace', 'act:hyperframes:list')
+      .text('☁️ ไฟล์ใน Drive', 'act:hyperframes:drive')
+      .row()
+      .text('🧰 เช็ก Video Toolkit (4 หมวด)', 'act:hyperframes:toolkit')
       .row()
       .text('⬅️ กลับเมนูหลัก', 'menu:main');
 
     return {
       text: [
-        '🎞 <b>HyperFrames Studio — SVG Cinematic Motion Video</b>',
-        '• Workspace: <code>/home/antigravity/shc08032545/hyperframes-studio</code>',
-        '• Engine: <code>hyperframes</code> (HTML/SVG + GSAP → MP4) + เสียงพากย์ <b>Google AI Studio (Gemini TTS)</b>',
+        '🎞 <b>HyperFrames Studio v8.0 — Hybrid 50/50 Cinema</b>',
+        '• มาตรฐาน: <b>30fps • ความยาวไม่เกิน 2 นาที (1:15–1:58) • Zero-Repeat</b>',
+        '• ภาพ 50/50: <b>Real-Footage + Callout Overlay 50% / Motion Graphics แท้ 50%</b>',
+        '• เสียงพากย์: <b>ElevenLabs eleven_v3 (Daniel)</b> อ่านเลขไทย 100% + ซับ Karaoke 5–7 คำ',
+        '• ส่งมอบครบ: <b>MP4 ฝังปก 9:16 คลีนๆ</b> + กล่อง Copy Title & 5 Hashtags + Drive',
         '',
-        'แตะเลือกรูปแบบด้านล่าง หรือพิมพ์หัวข้อเรื่อง + สัดส่วนที่ต้องการได้เลยครับ!',
+        'แตะเลือกขั้นตอนที่ต้องการ หรือพิมพ์หัวข้อข่าวที่อยากทำตอนใหม่ได้เลยครับ:',
       ].join('\n'),
       reply_markup: kb,
     };
@@ -233,26 +246,27 @@ export function buildSubMenu(section: string): MenuScreen | null {
 
   if (section === 'projects') {
     const kb = new InlineKeyboard()
-      .text('🛍 Affiliate Studio', 'menu:affiliate')
-      .text('🎞 HyperFrames Studio', 'menu:hyperframes')
-      .row()
-      .text('📊 TradingAgents', 'menu:trading')
+      .text('🎞 HyperFrames v8.0', 'menu:hyperframes')
       .text('🎬 Shortfilm Studio', 'menu:shortfilm')
       .row()
-      .text('🤖 Telegram Bridge', 'act:bridge:tree')
-      .text('🧪 Test Repo', 'act:test:status')
+      .text('🛍 Affiliate Studio', 'menu:affiliate')
+      .text('📊 TradingAgents', 'menu:trading')
       .row()
+      .text('🧰 Video Toolkit (4 หมวด)', 'act:hyperframes:toolkit')
+      .text('🤖 Telegram Bridge', 'act:bridge:tree')
+      .row()
+      .text('🧪 Test Repo', 'act:test:status')
       .text('⬅️ กลับเมนูหลัก', 'menu:main');
 
     return {
       text: [
         '📁 <b>โปรเจกต์ใน Workspace (/home/antigravity)</b>',
-        '• <code>hyperframes-studio</code> — แอนิเมชัน SVG Cinematic + พากย์ Google AI Studio',
+        '• <code>hyperframes-studio</code> — สารคดี Hybrid 50/50 (v8.0 • ≤2 นาที • ElevenLabs Daniel)',
+        '• <code>video-toolkit</code> — Remotion, Motion Canvas, Revideo, Manim, MoviePy, Editly',
+        '• <code>thai-shortfilm-studio</code> — หนังสั้น AI 15 ฉาก (สาเหตุ→หักมุม→แนวทางแก้ไข)',
         '• <code>motion-infographic-affiliate</code> — คลิปขายสินค้า Affiliate 30 วิ (Output → Drive)',
         '• <code>TradingAgents</code> — วิเคราะห์หุ้น Multi-Agent',
-        '• <code>thai-shortfilm-studio</code> — โปรดิวเซอร์หนังสั้น AI',
         '• <code>antigravity-telegram-bridge</code> — สะพาน Telegram Bot',
-        '• <code>test</code> — โปรเจกต์ทดสอบ',
       ].join('\n'),
       reply_markup: kb,
     };
@@ -269,18 +283,15 @@ export function buildSubMenu(section: string): MenuScreen | null {
       .text('🟢 เช็กสถานะ', 'sys:status')
       .row()
       .text('🏓 ทดสอบ Ping', 'sys:ping')
-      .text('🔄 สลับ Standby', 'sys:standby')
-      .row()
       .text('⬅️ กลับเมนูหลัก', 'menu:main');
 
     return {
       text: [
-        '⚙️ <b>สถานะระบบ & โหมดการทำงาน (Hybrid)</b>',
+        '⚙️ <b>สถานะระบบ (Direct Relay — @lucariooobot)</b>',
         '',
         `• <b>Antigravity Tier:</b> <code>${state.relayTier}</code>`,
         `• <b>Gemini API Model:</b> <code>${state.geminiModel}</code>`,
-        '• <b>Direct Relay:</b> ใช้สมอง Antigravity ในแชทนี้โดยตรง',
-        '• <b>Standby Daemon:</b> ออนไลน์ 24/7 ด้วย Gemini API',
+        '• <b>โหมดรอรับข้อความ:</b> <b>Direct Relay เฉพาะ @lucariooobot</b> (พักอัตโนมัติเมื่อเงียบครบ 20 นาที)',
       ].join('\n'),
       reply_markup: kb,
     };
@@ -349,15 +360,30 @@ export function resolveActionPrompt(callbackData: string): string | null {
       'แสดงรายการไฟล์และโฟลเดอร์ Output ใน Google Drive โฟลเดอร์ motion-infographic-affiliate (ID: 1DaX-ltIh5DHTt-qGrK3rRZxmdz-M5nXW) พร้อมลิงก์เปิดดู',
     'act:affiliate:status':
       'ตรวจสอบไฟล์และสถานะ git ในโปรเจกต์ /home/antigravity/shc08032545/motion-infographic-affiliate',
-    'act:shortfilm:new_idea': 'ไอเดียเรื่องใหม่ (ใช้ skill thai-shortfilm-studio)',
+    'act:shortfilm:new_idea':
+      'ไอเดียเรื่องใหม่ (ใช้ skill thai-shortfilm-studio โครงสร้างข่าวจริง สาเหตุ → หักมุม → แนวทางแก้ไข)',
+    'act:shortfilm:checklist':
+      'แสดงสรุปรายการตอนทั้งหมดจาก /home/antigravity/shc08032545/thai-shortfilm-studio/EPISODE_CHECKLIST.md พร้อมสถานะการผลิตและลิงก์ Drive',
+    'act:shortfilm:drive':
+      'แสดงรายการโฟลเดอร์และไฟล์ทั้งหมดใน Google Drive โฟลเดอร์ thai-shortfilm-studio (ID: 1TZlFs9Xm-WFaql5vkyqUbdoEeTx5RwJj) พร้อมลิงก์เปิดดู',
     'act:shortfilm:status':
       'ตรวจสอบไฟล์และสถานะ git ในโปรเจกต์ /home/antigravity/shc08032545/thai-shortfilm-studio',
+    'act:hyperframes:find_news':
+      'ใช้สกิล hyperframes-studio v8.0 ค้นหาข่าวร้อน/ประเด็นสืบสวนจริงในไทยวันนี้ (สิ่งแวดล้อม เศรษฐกิจ เทคโนโลยี หรือข่าวสังคมที่คนไทยกำลังพูดถึง) แล้วเสนอ 3–5 ไอเดียตอนใหม่พร้อม Hook 3 วิ, ตัวเลขจริง และจุดที่จะทำ Motion Graphics เด่นๆ (ความยาวไม่เกิน 2 นาที) เพื่อให้ผู้ใช้เลือกทำต่อ',
     'act:hyperframes:new_vertical':
-      'พร้อมสร้างวิดีโอแอนิเมชัน SVG Cinematic แนวตั้ง 9:16 ความยาว 60 วินาที ด้วย HyperFrames + พากย์เสียง Google AI Studio (Gemini TTS) — แนะนำสั้นๆ ให้ผู้ใช้พิมพ์หัวข้อเรื่องที่อยากเล่าได้เลย',
+      'พร้อมสร้างตอนใหม่ด้วยสกิล hyperframes-studio v8.0 (9:16, 30fps, ไม่เกิน 2 นาที 1:15–1:58, Hybrid 50/50 Real-Footage + Motion Graphics แท้สไตล์ Vox/Johnny Harris, พากย์ ElevenLabs eleven_v3 เสียง Daniel อ่านเลขไทย 100%, ฝังปก 9:16 คลีนๆ + กล่อง Copy Title & 5 Hashtags + Drive) — ถามผู้ใช้สั้นๆ ให้พิมพ์หัวข้อข่าวหรือประเด็นที่ต้องการทำได้เลย',
     'act:hyperframes:new_landscape':
-      'พร้อมสร้างวิดีโอแอนิเมชัน SVG Cinematic แนวนอน 16:9 ความยาว 90 วินาที ด้วย HyperFrames + พากย์เสียง Google AI Studio (Gemini TTS) — แนะนำสั้นๆ ให้ผู้ใช้พิมพ์หัวข้อเรื่องที่อยากเล่าได้เลย',
+      'พร้อมสร้างตอนใหม่แนวนอน YouTube 16:9 ด้วยสกิล hyperframes-studio v8.0 (30fps, ไม่เกิน 2 นาที, Hybrid 50/50 Real-Footage + Motion Graphics แท้, พากย์ ElevenLabs eleven_v3 เสียง Daniel + ปก 16:9 คลีนๆ) — ถามผู้ใช้สั้นๆ ให้พิมพ์หัวข้อข่าวหรือเรื่องที่ต้องการเล่าได้เลย',
+    'act:hyperframes:embed_cover':
+      'แสดงรายการไฟล์ MP4 ล่าสุดใน /home/antigravity/shc08032545/hyperframes-studio และถามผู้ใช้ว่าต้องการให้สร้างปก 9:16 คลีนๆ ฝังลงคลิปไหน (attached_pic) พร้อมจัดทำกล่อง 1-Tap Copy (Title + 5 Hashtags)',
+    'act:hyperframes:upgrade_existing':
+      'แสดงรายการตอนทั้งหมดใน /home/antigravity/shc08032545/hyperframes-studio พร้อมเวอร์ชัน ความยาว และสถานะ เพื่อถามผู้ใช้ว่าต้องการอัปเกรดตอนไหนเป็นมาตรฐาน v8.0 (Hybrid 50/50 • ≤2 นาที • ElevenLabs Daniel อ่านเลขไทย 100%)',
     'act:hyperframes:list':
-      'แสดงรายการโปรเจกต์และไฟล์วิดีโอ MP4 ทั้งหมดใน /home/antigravity/shc08032545/hyperframes-studio พร้อมขนาดไฟล์และสถานะล่าสุด',
+      'แสดงรายการโปรเจกต์และไฟล์วิดีโอ MP4 ทั้งหมดใน /home/antigravity/shc08032545/hyperframes-studio พร้อมความยาว ขนาดไฟล์ และสถานะล่าสุด',
+    'act:hyperframes:drive':
+      'แสดงรายการไฟล์วิดีโอ MP4 และรูปปกล่าสุดใน Google Drive โฟลเดอร์ hyperframes-studio (ID: 1d9Vucj7nlQ0Dygxd8pAWHqkcgRCPSEBz) พร้อมลิงก์เปิดดู',
+    'act:hyperframes:toolkit':
+      'สรุปเครื่องมือ Video Production Toolkit ทั้ง 4 หมวดที่ติดตั้งไว้ใน /home/antigravity/video-toolkit/README.md พร้อมสถานะพื้นที่ดิสก์คงเหลือ',
     'act:bridge:status':
       'ตรวจสอบ git status และรัน npm test ในโปรเจกต์ /home/antigravity/shc08032545/antigravity-telegram-bridge',
     'act:bridge:tree':

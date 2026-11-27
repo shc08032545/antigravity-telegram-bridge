@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { Api } from 'grammy';
-import { isAuthorized, loadConfig } from '../config.js';
+import { getBotIdFromToken, isAuthorized, loadConfig, type AppConfig } from '../config.js';
 import { escapeHtml } from '../telegram/formatter.js';
 import {
   buildMainMenu,
@@ -20,16 +20,20 @@ import {
 } from './modelState.js';
 
 const execFileAsync = promisify(execFile);
-const OFFSET_FILE = path.resolve('.relay-offset');
+const PRIMARY_OFFSET_FILE = path.resolve('.relay-offset');
 const UPLOADS_DIR = path.resolve('.relay-uploads');
+
+function offsetFileForBot(botId: string, isPrimary: boolean): string {
+  return isPrimary ? PRIMARY_OFFSET_FILE : path.resolve(`.relay-offset-${botId}`);
+}
 
 function sanitizeFileName(raw: string): string {
   return raw.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120) || 'attachment.bin';
 }
 
-async function readOffset(): Promise<number> {
+async function readOffset(offsetFile: string): Promise<number> {
   try {
-    const raw = (await fs.readFile(OFFSET_FILE, 'utf-8')).trim();
+    const raw = (await fs.readFile(offsetFile, 'utf-8')).trim();
     const num = Number(raw);
     return Number.isSafeInteger(num) && num > 0 ? num : 0;
   } catch {
@@ -37,8 +41,8 @@ async function readOffset(): Promise<number> {
   }
 }
 
-async function writeOffset(offset: number): Promise<void> {
-  await fs.writeFile(OFFSET_FILE, `${offset}\n`, 'utf-8');
+async function writeOffset(offsetFile: string, offset: number): Promise<void> {
+  await fs.writeFile(offsetFile, `${offset}\n`, 'utf-8');
 }
 
 async function downloadTelegramFile(
@@ -95,37 +99,59 @@ async function downloadTelegramFile(
   }
 }
 
-async function main(): Promise<void> {
-  const config = loadConfig();
-  const api = new Api(config.telegramBotToken);
-  let offset = await readOffset();
+async function pollBot(
+  config: AppConfig,
+  botToken: string,
+  isPrimary: boolean,
+  controller: AbortController,
+  tryClaim: () => boolean,
+): Promise<void> {
+  const botId = getBotIdFromToken(botToken);
+  const offsetFile = offsetFileForBot(botId, isPrimary);
+  const api = new Api(botToken);
+  let offset = await readOffset(offsetFile);
 
   await api.deleteWebhook({ drop_pending_updates: false }).catch(() => undefined);
+  const me = await api.getMe().catch(() => null);
+  const botUsername = me?.username ?? botId;
+
   await syncTelegramMenuCommands(api, [
     ...config.allowedUserIds,
     ...config.allowedChatIds,
-  ]);
+  ]).catch(() => undefined);
 
   const maxBytes = config.maxFileSizeMb * 1024 * 1024;
 
-  while (true) {
+  while (!controller.signal.aborted) {
     let updates;
     try {
-      updates = await api.getUpdates({
-        offset: offset > 0 ? offset : undefined,
-        timeout: 25,
-        allowed_updates: ['message', 'callback_query'],
-      });
+      updates = await api.getUpdates(
+        {
+          offset: offset > 0 ? offset : undefined,
+          timeout: 20,
+          allowed_updates: ['message', 'callback_query'],
+        },
+        controller.signal as Parameters<Api['getUpdates']>[1],
+      );
     } catch (err) {
+      if (controller.signal.aborted) {
+        return;
+      }
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[relay:wait] getUpdates error: ${msg}`);
+      console.error(`[relay:wait:${botUsername}] getUpdates error: ${msg}`);
       await new Promise((r) => setTimeout(r, 3000));
       continue;
     }
 
     for (const update of updates) {
-      offset = update.update_id + 1;
-      await writeOffset(offset);
+      if (controller.signal.aborted) {
+        return;
+      }
+      const nextOffset = update.update_id + 1;
+      const commitOffset = async () => {
+        offset = nextOffset;
+        await writeOffset(offsetFile, offset);
+      };
 
       // Handle interactive Inline Keyboard button presses
       if (update.callback_query) {
@@ -136,6 +162,7 @@ async function main(): Promise<void> {
         const data = cb.data ?? '';
 
         if (!isAuthorized(config, userId, chatId)) {
+          await commitOffset();
           await api
             .answerCallbackQuery(cb.id, {
               text: '⛔ คุณไม่มีสิทธิ์ใช้งานเมนูนี้',
@@ -146,6 +173,7 @@ async function main(): Promise<void> {
         }
 
         if (data.startsWith('menu:')) {
+          await commitOffset();
           const section = data.slice('menu:'.length);
           const screen = buildSubMenu(section);
           await api.answerCallbackQuery(cb.id).catch(() => undefined);
@@ -167,6 +195,7 @@ async function main(): Promise<void> {
         }
 
         if (data.startsWith('model:relay:')) {
+          await commitOffset();
           const tier = data.slice('model:relay:'.length) as RelayModelTier;
           const updated = saveModelState({ relayTier: tier });
           const screen = buildModelMenu(updated);
@@ -187,6 +216,7 @@ async function main(): Promise<void> {
         }
 
         if (data.startsWith('model:gemini:')) {
+          await commitOffset();
           const geminiModel = data.slice('model:gemini:'.length) as GeminiApiModel;
           const updated = saveModelState({ geminiModel });
           const screen = buildModelMenu(updated);
@@ -207,12 +237,13 @@ async function main(): Promise<void> {
         }
 
         if (data === 'sys:status') {
+          await commitOffset();
           const state = loadModelState();
           await api.answerCallbackQuery(cb.id).catch(() => undefined);
           await api
             .sendMessage(
               chatId,
-              `🟢 <b>สถานะระบบ: Antigravity Direct Relay (Hybrid Mode)</b>\n• Antigravity Tier: <code>${state.relayTier}</code>\n• Gemini API Model: <code>${state.geminiModel}</code>\n• Auto-Fallback: สลับเป็น Always-Online Daemon อัตโนมัติหากว่างเกิน 20 นาที`,
+              `🟢 <b>สถานะระบบ: Antigravity Direct Relay Only (@${escapeHtml(botUsername)})</b>\n• บอตที่เชื่อมต่ออยู่: <b>${config.telegramBotTokens.length} ตัว</b>\n• Antigravity Tier: <code>${state.relayTier}</code>\n• Gemini API Model: <code>${state.geminiModel}</code>\n• โหมดรอรับข้อความ: <b>Direct Relay (Auto-Stop เมื่อเงียบครบ 20 นาที)</b>`,
               { parse_mode: 'HTML' },
             )
             .catch(() => undefined);
@@ -220,20 +251,25 @@ async function main(): Promise<void> {
         }
 
         if (data === 'sys:ping') {
+          await commitOffset();
           await api.answerCallbackQuery(cb.id, { text: '🏓 Pong!' }).catch(() => undefined);
           await api
-            .sendMessage(chatId, '🏓 Pong! Antigravity Direct Relay พร้อมรับคำสั่งครับ')
+            .sendMessage(chatId, `🏓 Pong! Antigravity Direct Relay (@${botUsername}) พร้อมรับคำสั่งครับ`)
             .catch(() => undefined);
           continue;
         }
 
         if (data === 'sys:standby') {
+          if (!tryClaim()) return;
+          await commitOffset();
           await api
             .answerCallbackQuery(cb.id, { text: 'กำลังสลับเป็น Always-Online Standby...' })
             .catch(() => undefined);
           console.log(
             JSON.stringify({
               type: 'switch_standby',
+              botId,
+              botUsername,
               chatId,
               userId,
               username,
@@ -244,6 +280,8 @@ async function main(): Promise<void> {
 
         const actionPrompt = resolveActionPrompt(data);
         if (actionPrompt) {
+          if (!tryClaim()) return;
+          await commitOffset();
           await api
             .answerCallbackQuery(cb.id, { text: 'รับคำสั่งแล้ว กำลังดำเนินการ...' })
             .catch(() => undefined);
@@ -262,6 +300,8 @@ async function main(): Promise<void> {
               type: 'message',
               source: 'menu_button',
               callbackData: data,
+              botId,
+              botUsername,
               chatId,
               userId,
               username,
@@ -276,12 +316,16 @@ async function main(): Promise<void> {
           return;
         }
 
+        await commitOffset();
         await api.answerCallbackQuery(cb.id).catch(() => undefined);
         continue;
       }
 
       const msg = update.message;
-      if (!msg) continue;
+      if (!msg) {
+        await commitOffset();
+        continue;
+      }
 
       const userId = msg.from?.id;
       const chatId = msg.chat.id;
@@ -289,12 +333,14 @@ async function main(): Promise<void> {
       const rawText = (msg.text ?? msg.caption ?? '').trim();
 
       if (rawText === '/whoami') {
+        await commitOffset();
         const authorized = isAuthorized(config, userId, chatId);
         await api
           .sendMessage(
             chatId,
             [
               '🪪 <b>Telegram Identity</b>',
+              `• Bot: <code>@${escapeHtml(botUsername)}</code> (<code>${botId}</code>)`,
               `• User ID: <code>${userId ?? 'unknown'}</code>`,
               `• Chat ID: <code>${chatId}</code>`,
               `• Authorized: <b>${authorized ? 'Yes ✅' : 'No ❌'}</b>`,
@@ -306,6 +352,7 @@ async function main(): Promise<void> {
       }
 
       if (!isAuthorized(config, userId, chatId)) {
+        await commitOffset();
         if (msg.chat.type === 'private') {
           await api
             .sendMessage(
@@ -331,6 +378,7 @@ async function main(): Promise<void> {
 
       const shortcutSection = menuShortcutMap[rawText];
       if (shortcutSection) {
+        await commitOffset();
         const screen = buildSubMenu(shortcutSection) ?? buildMainMenu();
         await api
           .sendMessage(chatId, screen.text, {
@@ -342,6 +390,7 @@ async function main(): Promise<void> {
       }
 
       if (rawText === '/analyze') {
+        await commitOffset();
         const screen = buildSubMenu('trading') ?? buildMainMenu();
         await api
           .sendMessage(chatId, screen.text, {
@@ -353,6 +402,8 @@ async function main(): Promise<void> {
       }
 
       if (rawText.startsWith('/analyze ')) {
+        if (!tryClaim()) return;
+        await commitOffset();
         const ticker = rawText.slice('/analyze '.length).trim().toUpperCase();
         const prompt = `ใช้ TradingAgents วิเคราะห์หุ้น ${ticker} (ข้อมูลล่าสุด ภาษาไทย พร้อมแนบไฟล์ complete_report.html)`;
         await api.sendChatAction(chatId, 'typing').catch(() => undefined);
@@ -366,6 +417,8 @@ async function main(): Promise<void> {
         console.log(
           JSON.stringify({
             type: 'message',
+            botId,
+            botUsername,
             chatId,
             userId,
             username,
@@ -380,6 +433,7 @@ async function main(): Promise<void> {
       }
 
       if (rawText === '/drive') {
+        await commitOffset();
         const screen = buildSubMenu('gdrive') ?? buildMainMenu();
         await api
           .sendMessage(chatId, screen.text, {
@@ -391,17 +445,19 @@ async function main(): Promise<void> {
       }
 
       if (rawText === '/ping') {
+        await commitOffset();
         await api
-          .sendMessage(chatId, '🏓 Pong! Antigravity Direct Relay พร้อมรับคำสั่งครับ')
+          .sendMessage(chatId, `🏓 Pong! Antigravity Direct Relay (@${botUsername}) พร้อมรับคำสั่งครับ`)
           .catch(() => undefined);
         continue;
       }
 
       if (rawText === '/status' || rawText === '/mode') {
+        await commitOffset();
         await api
           .sendMessage(
             chatId,
-            '🟢 <b>Antigravity Direct Relay (Hybrid Mode)</b>\n• สมอง AI: Antigravity ในแชทนี้โดยตรง\n• พิมพ์ <code>/menu</code> เพื่อเปิดเมนูหลัก หรือส่งงานมาได้เลย',
+            `🟢 <b>Antigravity Direct Relay Only (@${escapeHtml(botUsername)})</b>\n• บอตที่เชื่อมต่ออยู่: <b>${config.telegramBotTokens.length} ตัว</b>\n• สมอง AI: Antigravity ในแชทนี้โดยตรง\n• พิมพ์ <code>/menu</code> เพื่อเปิดเมนูหลัก หรือส่งคำสั่งมาได้เลย`,
             { parse_mode: 'HTML' },
           )
           .catch(() => undefined);
@@ -409,6 +465,7 @@ async function main(): Promise<void> {
       }
 
       if (rawText === '/new') {
+        await commitOffset();
         await api
           .sendMessage(
             chatId,
@@ -420,6 +477,7 @@ async function main(): Promise<void> {
       }
 
       if (rawText === '/help') {
+        await commitOffset();
         const menu = buildMainMenu();
         await api
           .sendMessage(chatId, menu.text, {
@@ -431,9 +489,13 @@ async function main(): Promise<void> {
       }
 
       if (rawText === '/stop_relay' || rawText === '/stop-relay') {
+        if (!tryClaim()) return;
+        await commitOffset();
         console.log(
           JSON.stringify({
             type: 'switch_standby',
+            botId,
+            botUsername,
             chatId,
             userId,
             username,
@@ -441,6 +503,15 @@ async function main(): Promise<void> {
         );
         return;
       }
+
+      const hasAttachment = Boolean((msg.photo && msg.photo.length > 0) || msg.document);
+      if (!rawText && !hasAttachment) {
+        await commitOffset();
+        continue;
+      }
+
+      if (!tryClaim()) return;
+      await commitOffset();
 
       let attachmentPath: string | null = null;
       let attachmentError: string | null = null;
@@ -451,7 +522,7 @@ async function main(): Promise<void> {
           try {
             attachmentPath = await downloadTelegramFile(
               api,
-              config.telegramBotToken,
+              botToken,
               largest.file_id,
               `photo_${Date.now()}.jpg`,
               maxBytes,
@@ -464,7 +535,7 @@ async function main(): Promise<void> {
         try {
           attachmentPath = await downloadTelegramFile(
             api,
-            config.telegramBotToken,
+            botToken,
             msg.document.file_id,
             msg.document.file_name ?? `file_${Date.now()}.bin`,
             maxBytes,
@@ -472,10 +543,6 @@ async function main(): Promise<void> {
         } catch (err) {
           attachmentError = err instanceof Error ? err.message : String(err);
         }
-      }
-
-      if (!rawText && !attachmentPath && !attachmentError) {
-        continue;
       }
 
       await api.sendChatAction(chatId, 'typing').catch(() => undefined);
@@ -492,6 +559,8 @@ async function main(): Promise<void> {
       console.log(
         JSON.stringify({
           type: 'message',
+          botId,
+          botUsername,
           chatId,
           userId,
           username,
@@ -506,6 +575,49 @@ async function main(): Promise<void> {
       return;
     }
   }
+}
+
+function parseBotFilter(argv: string[]): Set<string> | null {
+  const bots = new Set<string>();
+  for (let i = 0; i < argv.length; i += 1) {
+    if (argv[i] === '--bot' && argv[i + 1]) {
+      for (const part of argv[i + 1].split(/[\s,]+/)) {
+        const trimmed = part.trim();
+        if (trimmed) bots.add(trimmed);
+      }
+      i += 1;
+    }
+  }
+  return bots.size > 0 ? bots : null;
+}
+
+async function main(): Promise<void> {
+  const config = loadConfig();
+  const botFilter = parseBotFilter(process.argv.slice(2));
+  const selectedTokens = botFilter
+    ? config.telegramBotTokens.filter((token) => botFilter.has(getBotIdFromToken(token)))
+    : config.telegramBotTokens;
+
+  if (selectedTokens.length === 0) {
+    throw new Error(`No configured Telegram bot matched --bot filter: ${[...(botFilter ?? [])].join(',')}`);
+  }
+
+  const controller = new AbortController();
+  let claimed = false;
+
+  const tryClaim = (): boolean => {
+    if (claimed) return false;
+    claimed = true;
+    controller.abort();
+    return true;
+  };
+
+  const primaryBotId = getBotIdFromToken(config.telegramBotToken);
+  await Promise.all(
+    selectedTokens.map((token) =>
+      pollBot(config, token, getBotIdFromToken(token) === primaryBotId, controller, tryClaim),
+    ),
+  );
 }
 
 main().catch((err) => {

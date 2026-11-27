@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import { Api, InputFile } from 'grammy';
-import { loadConfig } from '../config.js';
+import { loadConfig, resolveBotToken } from '../config.js';
 import {
   markdownToTelegramHtml,
   splitMarkdownForTelegram,
@@ -9,6 +9,7 @@ import {
 import { buildMainMenu, buildModelMenu } from './menu.js';
 
 interface CliArgs {
+  botId?: string;
   chatId: number;
   editMessageId?: number;
   text?: string;
@@ -22,6 +23,7 @@ interface CliArgs {
 }
 
 function parseArgs(argv: string[]): CliArgs {
+  let botId: string | undefined;
   let chatId: number | undefined;
   let editMessageId: number | undefined;
   let text: string | undefined;
@@ -36,7 +38,10 @@ function parseArgs(argv: string[]): CliArgs {
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
     const next = argv[i + 1];
-    if (flag === '--chat' && next) {
+    if (flag === '--bot' && next) {
+      botId = next;
+      i += 1;
+    } else if (flag === '--chat' && next) {
       chatId = Number(next);
       i += 1;
     } else if (flag === '--edit' && next) {
@@ -69,11 +74,11 @@ function parseArgs(argv: string[]): CliArgs {
 
   if (!chatId || !Number.isSafeInteger(chatId)) {
     throw new Error(
-      'Usage: relay:reply --chat <chatId> [--edit <msgId>] [--menu | --model-menu] [--text <md> | --file <path> | stdin]',
+      'Usage: relay:reply --chat <chatId> [--bot <botId>] [--edit <msgId>] [--menu | --model-menu] [--text <md> | --file <path> | stdin]',
     );
   }
 
-  return { chatId, editMessageId, text, file, photo, document, video, caption, showMenu, showModelMenu };
+  return { botId, chatId, editMessageId, text, file, photo, document, video, caption, showMenu, showModelMenu };
 }
 
 async function readStdin(): Promise<string> {
@@ -90,7 +95,8 @@ async function readStdin(): Promise<string> {
 async function main(): Promise<void> {
   const config = loadConfig();
   const args = parseArgs(process.argv.slice(2));
-  const api = new Api(config.telegramBotToken);
+  const token = resolveBotToken(config, args.botId);
+  const api = new Api(token);
 
   if (args.showMenu || args.showModelMenu) {
     const menu = args.showModelMenu ? buildModelMenu() : buildMainMenu();
