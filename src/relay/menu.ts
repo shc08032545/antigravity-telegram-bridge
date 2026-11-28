@@ -16,6 +16,7 @@ export interface MenuScreen {
 export const BOT_COMMANDS = [
   { command: 'menu', description: '🏠 เมนูหลักเลือกใช้งาน Project' },
   { command: 'hyperframes', description: '🎞 สารคดี v8.3 (Adaptive • เสียง Puck • 3 แกน)' },
+  { command: 'quota', description: '🔋 เช็ก Quota API เสียง & Antigravity' },
   { command: 'shortfilm', description: '🎬 หนังสั้น AI 15 ฉาก (สาเหตุ→หักมุม→ทางออก)' },
   { command: 'affiliate', description: '🛍 ทำคลิป Affiliate 30 วิ (เก็บลง Drive)' },
   { command: 'analyze', description: '📊 วิเคราะห์หุ้น (เช่น /analyze NVDA)' },
@@ -53,6 +54,8 @@ export async function syncTelegramMenuCommands(
 export function buildMainMenu(): MenuScreen {
   const kb = new InlineKeyboard()
     .text('🎞 HyperFrames v8.3 (Adaptive • เสียง Puck)', 'menu:hyperframes')
+    .row()
+    .text('🔋 เช็ก Quota API เสียง & Antigravity', 'menu:quota')
     .row()
     .text('🎬 หนังสั้น AI (สาเหตุ→หักมุม→ทางออก)', 'menu:shortfilm')
     .row()
@@ -228,7 +231,9 @@ export function buildSubMenu(section: string): MenuScreen | null {
       .text('📂 คลิปใน Workspace', 'act:hyperframes:list')
       .text('☁️ ไฟล์ใน Drive', 'act:hyperframes:drive')
       .row()
+      .text('🔋 เช็กโควตา API เสียง', 'act:quota:google_ai_studio')
       .text('🧰 เช็ก Video Toolkit', 'act:hyperframes:toolkit')
+      .row()
       .text('⬅️ กลับเมนูหลัก', 'menu:main');
 
     return {
@@ -237,10 +242,33 @@ export function buildSubMenu(section: string): MenuScreen | null {
         '• เล่าเรื่องอัจฉริยะ: <b>เลือกสูตรเข้ากับเรื่องอัตโนมัติ</b> (Thriller / Bar-Talk / Fast-Hook • ตัดน้ำ เหลือ 2–3 เลขจำติดหัว)',
         '• ตอนจบชวนคุย: <b>คำถามปลายเปิดคมๆ ชวนคิดและชวนคอมเมนต์เหมือนเดิม</b> • กระชับ <b>1:00–1:35 นาที</b>',
         '• ภาพ 3 แกน: <b>Real + Callout 35–40% • ภาพตัดแปะ Collage 30–35% • กราฟ/แผนที่ 30%</b>',
-        '• เสียงหลักประจำช่อง: <b>🔒 Google AI Studio TTS (Puck 1-Pass)</b> อ่านเลขไทย 100% + Pitch QA',
-        '• ส่งมอบครบ: <b>MP4 30fps ฝังปก 9:16 คลีนๆ</b> + กล่อง Copy Title & 5 Hashtags + Drive',
+        '• เสียงหลักประจำช่อง: <b>🔒 Google AI Studio TTS (Puck 1-Pass • 106Hz ±14Hz)</b> อ่านเลขไทย 100%',
+        '• ส่งมอบครบ: <b>MP4 30fps ฝังปก 9:16 คลีนๆ</b> + ซับ TikTok Safe Zone (410px) + Drive',
         '',
         'แตะเลือก <b>🔎 ค้นหาข่าวร้อนวันนี้</b> หรือ <b>🇹🇭 เรื่องลับไทยที่ยังไม่มีช่องไหนทำ</b> หรือพิมพ์หัวข้อที่อยากทำได้เลยครับ:',
+      ].join('\n'),
+      reply_markup: kb,
+    };
+  }
+
+  if (section === 'quota') {
+    const kb = new InlineKeyboard()
+      .text('🎙️ เช็ก API Google AI Studio (เจนเสียงได้ไหม?)', 'act:quota:google_ai_studio')
+      .row()
+      .text('🌐 เช็ก Quota หน้าเว็บ Antigravity & VM', 'act:quota:antigravity_web')
+      .row()
+      .text('⚡ เช็กทั้งหมดพร้อมกัน', 'act:quota:all')
+      .row()
+      .text('⬅️ กลับเมนูหลัก', 'menu:main');
+
+    return {
+      text: [
+        '🔋 <b>เช็กโควตา API & Antigravity</b>',
+        '',
+        '• <b>🎙️ Google AI Studio API:</b> ทดสอบยิงจริงแบบเบาที่สุดเพื่อตรวจว่า <b>เจนเสียง Puck (TTS 2.5 / 3.1)</b> และ <b>Gemini Flash</b> ยังใช้งานได้หรือไม่ + นับรอบวันนี้ + ลิงก์กราฟ Usage จริง',
+        '• <b>🌐 Antigravity Web & VM:</b> ตรวจสถานะโมเดลที่เลือก, โควตาเครื่องมือในแชท, พื้นที่ดิสก์/RAM และลิงก์เช็กแถบ Quota บนหน้าเว็บ Antigravity',
+        '',
+        'แตะเลือกหัวข้อที่ต้องการตรวจสอบได้เลยครับ:',
       ].join('\n'),
       reply_markup: kb,
     };
@@ -281,6 +309,8 @@ export function buildSubMenu(section: string): MenuScreen | null {
   if (section === 'system') {
     const state = loadModelState();
     const kb = new InlineKeyboard()
+      .text('🔋 เช็ก Quota API & Antigravity', 'menu:quota')
+      .row()
       .text('🧠 เลือก Model', 'menu:model')
       .text('🟢 เช็กสถานะ', 'sys:status')
       .row()
@@ -398,6 +428,12 @@ export function resolveActionPrompt(callbackData: string): string | null {
     'act:github:stock_repos': 'ค้นหา repo ใน GitHub การวิเคราะห์หุ้น',
     'act:gdrive:status': 'สถานะ Google drive',
     'act:gdrive:recent': 'แสดงไฟล์ที่อัปเดตล่าสุด 10 รายการใน Google Drive',
+    'act:quota:google_ai_studio':
+      'รันคำสั่ง python3 /home/antigravity/shc08032545/antigravity-telegram-bridge/scripts/check_quota.py --google แล้วสรุปผลแบบกระชับชัดเจนเป็นภาษาไทย (ห้ามพิมพ์ API Key เด็ดขาด!) ว่า Google AI Studio TTS (Puck 2.5 หลัก / 3.1 สำรอง) และ Gemini 2.5 Flash ยังเจนเสียง/ใช้งานได้อีกไหม วันนี้เจนไปแล้วกี่รอบ พร้อมแนบลิงก์ https://aistudio.google.com/usage ให้ผู้ใช้ดูกราฟโควตาจริง',
+    'act:quota:antigravity_web':
+      'รันคำสั่ง python3 /home/antigravity/shc08032545/antigravity-telegram-bridge/scripts/check_quota.py --antigravity แล้วสรุปสถานะโมเดลที่เลือก พื้นที่ดิสก์/RAM ของ VM โควตาเครื่องมือในแชท (เช่น generate_image) และอธิบายตรงไปตรงมาว่าแถบ Quota บัญชีบนหน้าเว็บ Antigravity ต้องดูโดยตรงในหน้าเว็บของเบราว์เซอร์ผู้ใช้ (VM ไม่สามารถดึง session หน้าเว็บผู้ใช้ได้)',
+    'act:quota:all':
+      'รันคำสั่ง python3 /home/antigravity/shc08032545/antigravity-telegram-bridge/scripts/check_quota.py --all แล้วสรุปทั้งผลตรวจ Google AI Studio API (เจนเสียง Puck ได้ไหม/วันนี้ใช้ไปกี่รอบ + ลิงก์ aistudio.google.com/usage) และสถานะ Antigravity/VM แบบครบถ้วนกระชับเป็นภาษาไทย (ห้ามพิมพ์ API Key เด็ดขาด!)',
     'act:news:us': 'ข่าวหุ้นอเมริกาวันนี้',
     'act:news:th': 'ข่าวไทยวันนี้',
     'act:news:nvda': 'ข่าว nvda ล่าสุด',

@@ -369,6 +369,7 @@ async function pollBot(
         '/menu': 'main',
         '/start': 'main',
         '/model': 'model',
+        '/quota': 'quota',
         '/affiliate': 'affiliate',
         '/news': 'news',
         '/shortfilm': 'shortfilm',
