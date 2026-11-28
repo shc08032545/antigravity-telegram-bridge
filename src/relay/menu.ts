@@ -15,7 +15,7 @@ export interface MenuScreen {
  */
 export const BOT_COMMANDS = [
   { command: 'menu', description: '🏠 เมนูหลักเลือกใช้งาน Project' },
-  { command: 'hyperframes', description: '🎞 สารคดี v8.1 (ภาพตัดแปะ 3 แกน • ≤2 นาที)' },
+  { command: 'hyperframes', description: '🎞 สารคดี v8.2 (Adaptive • เสียง Puck • 3 แกน)' },
   { command: 'shortfilm', description: '🎬 หนังสั้น AI 15 ฉาก (สาเหตุ→หักมุม→ทางออก)' },
   { command: 'affiliate', description: '🛍 ทำคลิป Affiliate 30 วิ (เก็บลง Drive)' },
   { command: 'analyze', description: '📊 วิเคราะห์หุ้น (เช่น /analyze NVDA)' },
@@ -52,7 +52,7 @@ export async function syncTelegramMenuCommands(
 
 export function buildMainMenu(): MenuScreen {
   const kb = new InlineKeyboard()
-    .text('🎞 HyperFrames v8.1 (ภาพตัดแปะ 3 แกน • ≤2 นาที)', 'menu:hyperframes')
+    .text('🎞 HyperFrames v8.2 (Adaptive • เสียง Puck)', 'menu:hyperframes')
     .row()
     .text('🎬 หนังสั้น AI (สาเหตุ→หักมุม→ทางออก)', 'menu:shortfilm')
     .row()
@@ -216,13 +216,13 @@ export function buildSubMenu(section: string): MenuScreen | null {
       .text('🔎 ค้นหาข่าวร้อนวันนี้', 'act:hyperframes:find_news')
       .text('🤯 เรื่องที่คนไม่เคยรู้', 'act:hyperframes:untold_facts')
       .row()
-      .text('🎬 สร้างตอนใหม่ 9:16 (v8.1 ภาพตัดแปะ)', 'act:hyperframes:new_vertical')
+      .text('🎬 สร้างตอนใหม่ 9:16 (v8.2 Adaptive)', 'act:hyperframes:new_vertical')
       .row()
-      .text('🖥 สร้างตอนใหม่ 16:9 YouTube (v8.1)', 'act:hyperframes:new_landscape')
+      .text('🖥 สร้างตอนใหม่ 16:9 YouTube (v8.2)', 'act:hyperframes:new_landscape')
       .row()
       .text('🖼️ ฝังปก 9:16 + กล่อง Copy แคปชั่น', 'act:hyperframes:embed_cover')
       .row()
-      .text('⚡ อัปเกรดคลิปเก่า → v8.1 ภาพตัดแปะ', 'act:hyperframes:upgrade_existing')
+      .text('⚡ อัปเกรดคลิปเก่า → v8.2 Adaptive', 'act:hyperframes:upgrade_existing')
       .row()
       .text('📂 คลิปใน Workspace', 'act:hyperframes:list')
       .text('☁️ ไฟล์ใน Drive', 'act:hyperframes:drive')
@@ -232,11 +232,12 @@ export function buildSubMenu(section: string): MenuScreen | null {
 
     return {
       text: [
-        '🎞 <b>HyperFrames Studio v8.1 — Hybrid 3 แกน + ภาพตัดแปะ</b>',
-        '• มาตรฐาน: <b>30fps • ≤ 2 นาที (1:15–1:58) • Zero-Repeat • เล่าเรื่อง 5 จังหวะ</b>',
+        '🎞 <b>HyperFrames Studio v8.2 — Adaptive Storytelling + ภาพตัดแปะ 3 แกน</b>',
+        '• เล่าเรื่องอัจฉริยะ: <b>เลือกสูตรเข้ากับเรื่องอัตโนมัติ</b> (Thriller / Bar-Talk / Loop 60 วิ • ตัดน้ำ เหลือ 2–3 เลขจำติดหัว)',
+        '• จบคมไม่ซ้ำซาก: <b>แบน "คอมเมนต์บอกกันครับ"</b> สลับคลังตอนจบ 4 แบบ • กระชับ <b>1:00–1:35 นาที</b>',
         '• ภาพ 3 แกน: <b>Real + Callout 35–40% • ภาพตัดแปะ Collage 30–35% • กราฟ/แผนที่ 30%</b>',
-        '• เสียงพากย์ 1-Pass: <b>Google AI Studio (Charon)</b> หรือ <b>ElevenLabs (Daniel)</b> อ่านเลขไทย 100%',
-        '• ส่งมอบครบ: <b>MP4 ฝังปก 9:16 คลีนๆ</b> + กล่อง Copy Title & 5 Hashtags + Drive',
+        '• เสียงหลักประจำช่อง: <b>🔒 Google AI Studio TTS (Puck 1-Pass)</b> อ่านเลขไทย 100% + Pitch QA',
+        '• ส่งมอบครบ: <b>MP4 30fps ฝังปก 9:16 คลีนๆ</b> + กล่อง Copy Title & 5 Hashtags + Drive',
         '',
         'แตะเลือก <b>🔎 ค้นหาข่าวร้อนวันนี้</b> หรือ <b>🤯 เรื่องที่คนไม่เคยรู้</b> หรือพิมพ์หัวข้อที่อยากทำได้เลยครับ:',
       ].join('\n'),
@@ -246,7 +247,7 @@ export function buildSubMenu(section: string): MenuScreen | null {
 
   if (section === 'projects') {
     const kb = new InlineKeyboard()
-      .text('🎞 HyperFrames v8.1', 'menu:hyperframes')
+      .text('🎞 HyperFrames v8.2', 'menu:hyperframes')
       .text('🎬 Shortfilm Studio', 'menu:shortfilm')
       .row()
       .text('🛍 Affiliate Studio', 'menu:affiliate')
@@ -261,7 +262,7 @@ export function buildSubMenu(section: string): MenuScreen | null {
     return {
       text: [
         '📁 <b>โปรเจกต์ใน Workspace (/home/antigravity)</b>',
-        '• <code>hyperframes-studio</code> — สารคดี v8.1 Hybrid 3 แกน (ภาพตัดแปะ Collage + Real + Motion • ≤2 นาที)',
+        '• <code>hyperframes-studio</code> — สารคดี v8.2 Adaptive Storytelling (เสียง Puck • ภาพตัดแปะ 3 แกน • 1:00–1:35 นาที)',
         '• <code>video-toolkit</code> — Remotion, Motion Canvas, Revideo, Manim, MoviePy, Editly',
         '• <code>thai-shortfilm-studio</code> — หนังสั้น AI 15 ฉาก (สาเหตุ→หักมุม→แนวทางแก้ไข)',
         '• <code>motion-infographic-affiliate</code> — คลิปขายสินค้า Affiliate 30 วิ (Output → Drive)',
@@ -369,17 +370,17 @@ export function resolveActionPrompt(callbackData: string): string | null {
     'act:shortfilm:status':
       'ตรวจสอบไฟล์และสถานะ git ในโปรเจกต์ /home/antigravity/shc08032545/thai-shortfilm-studio',
     'act:hyperframes:find_news':
-      'ใช้สกิล hyperframes-studio v8.1 ค้นหาข่าวร้อน/ประเด็นสืบสวนจริงในไทยวันนี้ (สิ่งแวดล้อม เศรษฐกิจ เทคโนโลยี หรือข่าวสังคมที่คนไทยกำลังพูดถึง) แล้วเสนอ 5 ไอเดียตอนใหม่พร้อม Hook 3 วิ, ตัวเลขจริง, จุด Beat Drop หักมุม และจุดเด่นภาพ Hybrid 3 แกน (Real + ภาพตัดแปะ Paper Cutout Collage Motion + กราฟ/แผนที่ ความยาวไม่เกิน 2 นาที) เพื่อให้ผู้ใช้เลือกทำต่อ',
+      'ใช้สกิล hyperframes-studio v8.2 (Adaptive Storytelling • ล็อกเสียง Puck 1-Pass) ค้นหาข่าวร้อน/ประเด็นสืบสวนจริงในไทยวันนี้ (สิ่งแวดล้อม เศรษฐกิจ เทคโนโลยี หรือข่าวสังคมที่คนไทยกำลังพูดถึง) แล้วเสนอ 5 ไอเดียตอนใหม่พร้อมระบุสูตรเล่าเรื่องที่เหมาะกับแต่ละเรื่อง (Mystery Thriller / Bar-Talk / Seamless Loop), แนวตอนจบที่ไม่ซ้ำซาก, 2–3 ตัวเลขจำติดหัวแบบแปลงให้เห็นภาพ และไอเดียภาพตัดแปะ 3 แกน (1:00–1:35 นาที) เพื่อให้ผู้ใช้เลือกทำต่อ',
     'act:hyperframes:untold_facts':
-      'ใช้สกิล hyperframes-studio v8.1 ค้นหา "เรื่องจริงที่คนส่วนใหญ่ไม่เคยรู้" (ความลับเบื้องหลัง กลไกซ่อนเร้น ประวัติศาสตร์ที่ถูกลืม วิทยาศาสตร์ใกล้ตัว เศรษฐกิจ หรือเบื้องหลังสิ่งรอบตัวทั้งในไทยและโลกที่มีข้อมูลจริงรองรับ) แล้วเสนอ 5 ไอเดียตอนใหม่แบบเล่าเรื่องสืบสวน 5 จังหวะ พร้อม Hook 3 วิชวนอึ้ง, ตัวเลขจริง, จุด Beat Drop หักมุม และไอเดียภาพตัดแปะ Paper Cutout Collage Motion + Motion Graphics (ความยาวไม่เกิน 2 นาที) เพื่อให้ผู้ใช้เลือกทำต่อ',
+      'ใช้สกิล hyperframes-studio v8.2 (Adaptive Storytelling • ล็อกเสียง Puck 1-Pass) ค้นหา "เรื่องจริงที่คนส่วนใหญ่ไม่เคยรู้" (ความลับเบื้องหลัง กลไกซ่อนเร้น ประวัติศาสตร์ที่ถูกลืม วิทยาศาสตร์ใกล้ตัว เศรษฐกิจ หรือเบื้องหลังสิ่งรอบตัวทั้งในไทยและโลกที่มีข้อมูลจริงรองรับ) แล้วเสนอ 5 ไอเดียตอนใหม่พร้อมระบุสูตรเล่าเรื่องที่เข้ากับเรื่อง (Bar-Talk / Mystery Thriller / Seamless Loop), แนวตอนจบคมๆ (ไม่ใช้ถามคอมเมนต์ซ้ำซาก), 2–3 ตัวเลขจำติดหัว และไอเดียภาพตัดแปะ 3 แกน (1:00–1:35 นาที) เพื่อให้ผู้ใช้เลือกทำต่อ',
     'act:hyperframes:new_vertical':
-      'พร้อมสร้างตอนใหม่ด้วยสกิล hyperframes-studio v8.1 (9:16, 30fps, ≤2 นาที 1:15–1:58, Hybrid 3 แกน: Real+Callout 35–40% / ภาพตัดแปะ Paper Cutout Collage Motion 30–35% / กราฟ-แผนที่-ไดอะแกรม 30%, เล่าเรื่องสืบสวน 5 จังหวะ, พากย์ 1-Pass Google AI Studio Charon หรือ ElevenLabs Daniel อ่านเลขไทย 100%, ฝังปก 9:16 คลีนๆ + กล่อง Copy Title & 5 Hashtags + Drive) — ถามผู้ใช้สั้นๆ ให้พิมพ์หัวข้อข่าวหรือเรื่องที่คนไม่เคยรู้ได้เลย',
+      'พร้อมสร้างตอนใหม่ด้วยสกิล hyperframes-studio v8.2 (9:16, 30fps, กระชับ 1:00–1:35 นาที, Adaptive Storytelling เลือกสูตรและตอนจบ 4 แบบให้เข้ากับเรื่องอัตโนมัติ ตัดรายละเอียดรก เหลือ 2–3 ตัวเลขจำติดหัว, Hybrid 3 แกน: Real+Callout 35–40% / ภาพตัดแปะ Paper Cutout Collage 30–35% / กราฟ-แผนที่ 30%, ล็อกเสียงหลัก Google AI Studio TTS Puck 1-Pass อ่านเลขไทย 100%, ฝังปก 9:16 คลีนๆ + กล่อง Copy Title & 5 Hashtags + Drive) — ถามผู้ใช้สั้นๆ ให้พิมพ์หัวข้อข่าวหรือเรื่องที่คนไม่เคยรู้ได้เลย',
     'act:hyperframes:new_landscape':
-      'พร้อมสร้างตอนใหม่แนวนอน YouTube 16:9 ด้วยสกิล hyperframes-studio v8.1 (30fps, ≤2 นาที, Hybrid 3 แกน ภาพตัดแปะ Collage + Real + Motion Graphics, เล่าเรื่อง 5 จังหวะ, พากย์ 1-Pass Charon/Daniel + ปก 16:9 คลีนๆ) — ถามผู้ใช้สั้นๆ ให้พิมพ์หัวข้อข่าวหรือเรื่องที่ต้องการเล่าได้เลย',
+      'พร้อมสร้างตอนใหม่แนวนอน YouTube 16:9 ด้วยสกิล hyperframes-studio v8.2 (30fps, กระชับ 1:00–1:35 นาที, Adaptive Storytelling + Hybrid 3 แกน ภาพตัดแปะ Collage + Real + Motion Graphics, ล็อกเสียง Puck 1-Pass + ปก 16:9 คลีนๆ) — ถามผู้ใช้สั้นๆ ให้พิมพ์หัวข้อข่าวหรือเรื่องที่ต้องการเล่าได้เลย',
     'act:hyperframes:embed_cover':
       'แสดงรายการไฟล์ MP4 ล่าสุดใน /home/antigravity/shc08032545/hyperframes-studio และถามผู้ใช้ว่าต้องการให้สร้างปก 9:16 คลีนๆ ฝังลงคลิปไหน (attached_pic) พร้อมจัดทำกล่อง 1-Tap Copy (Title + 5 Hashtags)',
     'act:hyperframes:upgrade_existing':
-      'แสดงรายการตอนทั้งหมดใน /home/antigravity/shc08032545/hyperframes-studio พร้อมเวอร์ชัน ความยาว และสถานะ เพื่อถามผู้ใช้ว่าต้องการอัปเกรดตอนไหนเป็นมาตรฐาน v8.1 (Hybrid 3 แกน ภาพตัดแปะ Paper Cutout Collage + เล่าเรื่อง 5 จังหวะ • ≤2 นาที)',
+      'แสดงรายการตอนทั้งหมดใน /home/antigravity/shc08032545/hyperframes-studio พร้อมเวอร์ชัน ความยาว และสถานะ เพื่อถามผู้ใช้ว่าต้องการอัปเกรดตอนไหนเป็นมาตรฐาน v8.2 (Adaptive Storytelling • ล็อกเสียง Puck • ภาพตัดแปะ 3 แกน • กระชับ 1:00–1:35 นาที)',
     'act:hyperframes:list':
       'แสดงรายการโปรเจกต์และไฟล์วิดีโอ MP4 ทั้งหมดใน /home/antigravity/shc08032545/hyperframes-studio พร้อมความยาว ขนาดไฟล์ และสถานะล่าสุด',
     'act:hyperframes:drive':
