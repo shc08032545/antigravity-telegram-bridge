@@ -120,15 +120,17 @@ def check_google() -> dict:
     key = load_google_api_key()
     if not key:
         return {"configured": False, "error": "ไม่พบ GOOGLE_API_KEY ในระบบ"}
-    tts_primary = probe_tts(key, "gemini-2.5-flash-preview-tts", "Puck")
-    tts_backup = probe_tts(key, "gemini-3.1-flash-tts-preview", "Puck")
+    tts_primary = probe_tts(key, "gemini-3.8-flash-tts", "Puck")
+    tts_backup = probe_tts(key, "gemini-3.8-flash-lite-tts", "Puck")
+    tts_legacy = probe_tts(key, "gemini-2.5-flash-preview-tts", "Puck")
     text_align = probe_text(key, "gemini-2.5-flash")
     today_files = count_today_tts_files()
     return {
         "configured": True,
         "checked_at_bkk": datetime.datetime.now(BKK_TZ).strftime("%Y-%m-%d %H:%M:%S ICT"),
-        "tts_primary_2_5": tts_primary,
-        "tts_backup_3_1": tts_backup,
+        "tts_primary_3_8": tts_primary,
+        "tts_backup_3_8_lite": tts_backup,
+        "tts_legacy_2_5": tts_legacy,
         "gemini_2_5_flash": text_align,
         "today_local_tts_runs": len(today_files),
         "today_local_tts_files": today_files,

@@ -242,7 +242,7 @@ export function buildSubMenu(section: string): MenuScreen | null {
         '• เล่าเรื่องอัจฉริยะ: <b>เลือกสูตรเข้ากับเรื่องอัตโนมัติ</b> (Thriller / Bar-Talk / Fast-Hook • ตัดน้ำ เหลือ 2–3 เลขจำติดหัว)',
         '• ตอนจบชวนคุย: <b>คำถามปลายเปิดคมๆ ชวนคิดและชวนคอมเมนต์เหมือนเดิม</b> • กระชับ <b>1:00–1:35 นาที</b>',
         '• ภาพ 3 แกน: <b>Real + Callout 35–40% • ภาพตัดแปะ Collage 30–35% • กราฟ/แผนที่ 30%</b>',
-        '• เสียงหลักประจำช่อง: <b>🔒 Google AI Studio TTS (Puck 1-Pass • 106Hz ±14Hz)</b> อ่านเลขไทย 100%',
+        '• เสียงหลักประจำช่อง: <b>🔒 Gemini 3.8 Flash TTS (Puck • 106Hz ±14Hz)</b> อ่านเลขไทย 100%',
         '• ส่งมอบครบ: <b>MP4 30fps ฝังปก 9:16 คลีนๆ</b> + ซับ TikTok Safe Zone (410px) + Drive',
         '',
         'แตะเลือก <b>🔎 ค้นหาข่าวร้อนวันนี้</b> หรือ <b>🇹🇭 เรื่องลับไทยที่ยังไม่มีช่องไหนทำ</b> หรือพิมพ์หัวข้อที่อยากทำได้เลยครับ:',
@@ -265,7 +265,7 @@ export function buildSubMenu(section: string): MenuScreen | null {
       text: [
         '🔋 <b>เช็กโควตา API & Antigravity</b>',
         '',
-        '• <b>🎙️ Google AI Studio API:</b> ทดสอบยิงจริงแบบเบาที่สุดเพื่อตรวจว่า <b>เจนเสียง Puck (TTS 2.5 / 3.1)</b> และ <b>Gemini Flash</b> ยังใช้งานได้หรือไม่ + นับรอบวันนี้ + ลิงก์กราฟ Usage จริง',
+        '• <b>🎙️ Google AI Studio API:</b> ทดสอบยิงจริงแบบเบาที่สุดเพื่อตรวจว่า <b>Gemini 3.8 Flash TTS (Puck หลัก/Lite)</b> และ <b>Gemini Flash</b> ยังใช้งานได้หรือไม่ + นับรอบวันนี้ + ลิงก์กราฟ Usage จริง',
         '• <b>🌐 Antigravity Web & VM:</b> ตรวจสถานะโมเดลที่เลือก, โควตาเครื่องมือในแชท, พื้นที่ดิสก์/RAM และลิงก์เช็กแถบ Quota บนหน้าเว็บ Antigravity',
         '',
         'แตะเลือกหัวข้อที่ต้องการตรวจสอบได้เลยครับ:',
@@ -405,13 +405,13 @@ export function resolveActionPrompt(callbackData: string): string | null {
     'act:hyperframes:untold_facts':
       'ใช้สกิล hyperframes-studio v8.3 (Adaptive Storytelling • ล็อกเสียง Puck 1-Pass) ค้นหา "เรื่องจริงที่คนไทยส่วนใหญ่ไม่เคยรู้ในประเทศไทย และยังไม่มีช่อง YouTube / TikTok / สารคดีไทยช่องไหนทำ" (ห้ามเอาเรื่องต่างประเทศแมสๆ หรือเรื่องซ้ำที่ช่องดังทำเยอะแล้ว! ให้ขุดลึกเฉพาะในประเทศไทย เช่น กลไกซ่อนเร้นในระบบราชการ/โครงสร้างพื้นฐาน/พลังงาน/กฎหมายไทยที่คนนึกไม่ถึง, เกร็ดภูมิศาสตร์/เขตแดน/จังหวัดแปลกของไทย, ความลับอุตสาหกรรม/เศรษฐกิจไทยที่ซ่อนอยู่ในข้อมูลราชการ, หรือเหตุการณ์จริงในประวัติศาสตร์ท้องถิ่นไทยที่ถูกลืม) พร้อมเช็ก YouTube/เว็บก่อนเสนอเพื่อคัดเรื่องซ้ำออก แล้วเสนอ 5 ไอเดียตอนใหม่พร้อมเหตุผลว่าทำไมยังไม่มีช่องไหนทำ, สูตรเล่าเรื่องที่เข้ากับเรื่อง (Bar-Talk / Mystery Thriller / Fast-Hook), คำถามปลายเปิดคมๆ ชวนคอมเมนต์ปิดท้าย, 2–3 ตัวเลขจำติดหัวจากแหล่งข้อมูลจริง และไอเดียภาพตัดแปะ 3 แกน (1:00–1:35 นาที) เพื่อให้ผู้ใช้เลือกทำต่อ',
     'act:hyperframes:new_vertical':
-      'พร้อมสร้างตอนใหม่ด้วยสกิล hyperframes-studio v8.3 (9:16, 30fps, กระชับ 1:00–1:35 นาที, Adaptive Storytelling เลือกสูตรเล่าเรื่องอัตโนมัติ ตัดรายละเอียดรก เหลือ 2–3 ตัวเลขจำติดหัว, จบด้วยคำถามปลายเปิดชวนคิดและชวนคอมเมนต์เหมือนเดิม, Hybrid 3 แกน: Real+Callout 35–40% / ภาพตัดแปะ Paper Cutout Collage 30–35% / กราฟ-แผนที่ 30%, ล็อกเสียงหลัก Google AI Studio TTS Puck 1-Pass อ่านเลขไทย 100%, ฝังปก 9:16 คลีนๆ + กล่อง Copy Title & 5 Hashtags + Drive) — ถามผู้ใช้สั้นๆ ให้พิมพ์หัวข้อข่าวหรือเรื่องที่คนไม่เคยรู้ได้เลย',
+      'พร้อมสร้างตอนใหม่ด้วยสกิล hyperframes-studio v8.3 (9:16, 30fps, กระชับ 1:00–1:35 นาที, Adaptive Storytelling เลือกสูตรเล่าเรื่องอัตโนมัติ ตัดรายละเอียดรก เหลือ 2–3 ตัวเลขจำติดหัว, จบด้วยคำถามปลายเปิดชวนคิดและชวนคอมเมนต์เหมือนเดิม, Hybrid 3 แกน: Real+Callout 35–40% / ภาพตัดแปะ Paper Cutout Collage 30–35% / กราฟ-แผนที่ 30%, ล็อกเสียงหลัก Google AI Studio Gemini 3.8 Flash TTS (gemini-3.8-flash-tts • Puck 1-Pass • Pitch 106Hz drift ≤ ±14Hz) อ่านเลขไทย 100%, ฝังปก 9:16 คลีนๆ + กล่อง Copy Title & 5 Hashtags + Drive) — ถามผู้ใช้สั้นๆ ให้พิมพ์หัวข้อข่าวหรือเรื่องที่คนไม่เคยรู้ได้เลย',
     'act:hyperframes:new_landscape':
-      'พร้อมสร้างตอนใหม่แนวนอน YouTube 16:9 ด้วยสกิล hyperframes-studio v8.3 (30fps, กระชับ 1:00–1:35 นาที, Adaptive Storytelling + จบด้วยคำถามปลายเปิดชวนคอมเมนต์ + Hybrid 3 แกน ภาพตัดแปะ Collage + Real + Motion Graphics, ล็อกเสียง Puck 1-Pass + ปก 16:9 คลีนๆ) — ถามผู้ใช้สั้นๆ ให้พิมพ์หัวข้อข่าวหรือเรื่องที่ต้องการเล่าได้เลย',
+      'พร้อมสร้างตอนใหม่แนวนอน YouTube 16:9 ด้วยสกิล hyperframes-studio v8.3 (30fps, กระชับ 1:00–1:35 นาที, Adaptive Storytelling + จบด้วยคำถามปลายเปิดชวนคอมเมนต์ + Hybrid 3 แกน ภาพตัดแปะ Collage + Real + Motion Graphics, ล็อกเสียง Gemini 3.8 Flash TTS Puck 1-Pass + ปก 16:9 คลีนๆ) — ถามผู้ใช้สั้นๆ ให้พิมพ์หัวข้อข่าวหรือเรื่องที่ต้องการเล่าได้เลย',
     'act:hyperframes:embed_cover':
       'แสดงรายการไฟล์ MP4 ล่าสุดใน /home/antigravity/shc08032545/hyperframes-studio และถามผู้ใช้ว่าต้องการให้สร้างปก 9:16 คลีนๆ ฝังลงคลิปไหน (attached_pic) พร้อมจัดทำกล่อง 1-Tap Copy (Title + 5 Hashtags)',
     'act:hyperframes:upgrade_existing':
-      'แสดงรายการตอนทั้งหมดใน /home/antigravity/shc08032545/hyperframes-studio พร้อมเวอร์ชัน ความยาว และสถานะ เพื่อถามผู้ใช้ว่าต้องการอัปเกรดตอนไหนเป็นมาตรฐาน v8.3 (Adaptive Storytelling • ล็อกเสียง Puck • จบคำถามปลายเปิด • ภาพตัดแปะ 3 แกน • กระชับ 1:00–1:35 นาที)',
+      'แสดงรายการตอนทั้งหมดใน /home/antigravity/shc08032545/hyperframes-studio พร้อมเวอร์ชัน ความยาว และสถานะ เพื่อถามผู้ใช้ว่าต้องการอัปเกรดตอนไหนเป็นมาตรฐาน v8.3 (Adaptive Storytelling • ล็อกเสียง Gemini 3.8 Flash TTS Puck • จบคำถามปลายเปิด • ภาพตัดแปะ 3 แกน • กระชับ 1:00–1:35 นาที)',
     'act:hyperframes:list':
       'แสดงรายการโปรเจกต์และไฟล์วิดีโอ MP4 ทั้งหมดใน /home/antigravity/shc08032545/hyperframes-studio พร้อมความยาว ขนาดไฟล์ และสถานะล่าสุด',
     'act:hyperframes:drive':
@@ -429,11 +429,11 @@ export function resolveActionPrompt(callbackData: string): string | null {
     'act:gdrive:status': 'สถานะ Google drive',
     'act:gdrive:recent': 'แสดงไฟล์ที่อัปเดตล่าสุด 10 รายการใน Google Drive',
     'act:quota:google_ai_studio':
-      'รันคำสั่ง python3 /home/antigravity/shc08032545/antigravity-telegram-bridge/scripts/check_quota.py --google แล้วสรุปผลแบบกระชับชัดเจนเป็นภาษาไทย (ห้ามพิมพ์ API Key เด็ดขาด!) ว่า Google AI Studio TTS (Puck 2.5 หลัก / 3.1 สำรอง) และ Gemini 2.5 Flash ยังเจนเสียง/ใช้งานได้อีกไหม วันนี้เจนไปแล้วกี่รอบ พร้อมแนบลิงก์ https://aistudio.google.com/usage ให้ผู้ใช้ดูกราฟโควตาจริง',
+      'รันคำสั่ง python3 /home/antigravity/shc08032545/antigravity-telegram-bridge/scripts/check_quota.py --google แล้วสรุปผลแบบกระชับชัดเจนเป็นภาษาไทย (ห้ามพิมพ์ API Key เด็ดขาด!) ว่า Google AI Studio Gemini 3.8 Flash TTS (gemini-3.8-flash-tts หลัก • Puck / gemini-3.8-flash-lite-tts สำรอง) และ Gemini 2.5 Flash ยังเจนเสียง/ใช้งานได้อีกไหม วันนี้เจนไปแล้วกี่รอบ พร้อมแนบลิงก์ https://aistudio.google.com/usage ให้ผู้ใช้ดูกราฟโควตาจริง',
     'act:quota:antigravity_web':
       'รันคำสั่ง python3 /home/antigravity/shc08032545/antigravity-telegram-bridge/scripts/check_quota.py --antigravity แล้วสรุปสถานะโมเดลที่เลือก พื้นที่ดิสก์/RAM ของ VM โควตาเครื่องมือในแชท (เช่น generate_image) และอธิบายตรงไปตรงมาว่าแถบ Quota บัญชีบนหน้าเว็บ Antigravity ต้องดูโดยตรงในหน้าเว็บของเบราว์เซอร์ผู้ใช้ (VM ไม่สามารถดึง session หน้าเว็บผู้ใช้ได้)',
     'act:quota:all':
-      'รันคำสั่ง python3 /home/antigravity/shc08032545/antigravity-telegram-bridge/scripts/check_quota.py --all แล้วสรุปทั้งผลตรวจ Google AI Studio API (เจนเสียง Puck ได้ไหม/วันนี้ใช้ไปกี่รอบ + ลิงก์ aistudio.google.com/usage) และสถานะ Antigravity/VM แบบครบถ้วนกระชับเป็นภาษาไทย (ห้ามพิมพ์ API Key เด็ดขาด!)',
+      'รันคำสั่ง python3 /home/antigravity/shc08032545/antigravity-telegram-bridge/scripts/check_quota.py --all แล้วสรุปทั้งผลตรวจ Google AI Studio API (Gemini 3.8 Flash TTS เจนเสียง Puck ได้ไหม/วันนี้ใช้ไปกี่รอบ + ลิงก์ aistudio.google.com/usage) และสถานะ Antigravity/VM แบบครบถ้วนกระชับเป็นภาษาไทย (ห้ามพิมพ์ API Key เด็ดขาด!)',
     'act:news:us': 'ข่าวหุ้นอเมริกาวันนี้',
     'act:news:th': 'ข่าวไทยวันนี้',
     'act:news:nvda': 'ข่าว nvda ล่าสุด',
