@@ -37,7 +37,7 @@ def load_google_api_key() -> str:
 def probe_tts(api_key: str, model: str, voice: str = "Puck") -> dict:
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     payload = {
-        "contents": [{"parts": [{"text": "สวัสดี"}]}],
+        "contents": [{"parts": [{"text": "ผู้บรรยายชายไทย อ่านออกเสียงคำนี้เท่านั้น:\nทดสอบ"}]}],
         "generationConfig": {
             "responseModalities": ["AUDIO"],
             "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}}},
@@ -139,11 +139,11 @@ def check_google() -> dict:
 
 def check_antigravity() -> dict:
     usage = shutil.disk_usage("/home/antigravity")
-    model_state_path = Path("/home/antigravity/shc08032545/antigravity-telegram-bridge/data/model-state.json")
-    model_state = {}
+    model_state_path = Path("/home/antigravity/shc08032545/antigravity-telegram-bridge/.relay-model.json")
+    model_state = {"relayTier": "inherit", "geminiModel": "gemini-3.5-flash"}
     if model_state_path.exists():
         try:
-            model_state = json.loads(model_state_path.read_text(encoding="utf-8"))
+            model_state.update(json.loads(model_state_path.read_text(encoding="utf-8")))
         except Exception:
             pass
     mem_avail_gb = None
